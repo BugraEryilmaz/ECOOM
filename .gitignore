@@ -1,0 +1,5 @@
+build/
+*.sched
+*.so
+*.bo
+*.ba

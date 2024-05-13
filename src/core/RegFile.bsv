@@ -7,7 +7,7 @@ interface RFIfc#(numeric type idx_bits, numeric type data_bits);
     method Action write (Bit#(idx_bits) idx, Bit#(data_bits) data);
 endinterface
 
-module mkForwardingRF(RFIfc#(idx_bits, data_bits));
+module mkRegFile(RFIfc#(idx_bits, data_bits));
     Vector#(TExp#(idx_bits), ConfigReg#(Bit#(data_bits))) rf <- replicateM(mkConfigReg(0));
     Vector#(1, Wire#(Bit#(data_bits))) data_forward <- replicateM(mkWire);
     Vector#(1, RWire#(Bit#(idx_bits))) idx_forward <- replicateM(mkRWire);
