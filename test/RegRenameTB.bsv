@@ -1,4 +1,4 @@
-import ../src/core/RegRename::*;
+import RegRename::*;
 import FIFO::*;
 
 module mkRegRenameTB(Empty);
