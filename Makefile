@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := all
 BUILD_DIR=../../build
 BINARY_NAME=ecoom
-BSC_FLAGS=--aggressive-conditions --show-schedule -remove-dollar -vdir $(BUILD_DIR) -bdir $(BUILD_DIR) -simdir $(BUILD_DIR) -o 
+BSC_FLAGS=--aggressive-conditions --show-schedule -remove-dollar -vdir $(BUILD_DIR) -bdir $(BUILD_DIR) -simdir $(BUILD_DIR) -info-dir $(BUILD_DIR) -o 
 
 .PHONY: clean all verilog $(BINARY_NAME)
 
