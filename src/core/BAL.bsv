@@ -77,10 +77,8 @@ module mkBAL(PE#(physicalRegSize, robTagSize));
     endmethod
 endmodule
 
+(* synthesize *)
 module mkBALSized(PE#(6, 6));
     PE#(6, 6) pe <- mkBAL;
-
-    method Action put(PEInput#(6, 6) entry) = pe.put(entry);
-    method ActionValue#(PEResult#(6, 6)) get() = pe.get();
-    method Action flush() = pe.flush();
+    return pe;
 endmodule

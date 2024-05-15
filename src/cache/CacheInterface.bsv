@@ -8,14 +8,6 @@ import Vector::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
 
-
-interface CacheInterface;
-    method Action sendReqData(CacheReq req);
-    method ActionValue#(Word) getRespData();
-    method Action sendReqInstr(CacheReq req);
-    method ActionValue#(Word) getRespInstr();
-endinterface
-
 typedef enum {
     INSTR,
     DATA

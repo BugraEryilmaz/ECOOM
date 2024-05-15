@@ -50,8 +50,5 @@ endmodule
 
 module mkIALUSized(PE#(6, 6));
     PE#(6, 6) ialu <- mkIALU;
-
-    method Action put(PEInput#(6, 6) entry) = ialu.put(entry);
-    method ActionValue#(PEResult#(6, 6)) get() = ialu.get();
-    method Action flush() = ialu.flush();
+    return ialu;
 endmodule

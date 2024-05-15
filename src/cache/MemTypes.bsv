@@ -106,3 +106,11 @@ endfunction
 
 
 // Helper types for implementation (L2 cache):
+
+// Cache Interface 
+interface CacheInterface;
+    method Action sendReqData(CacheReq req);
+    method ActionValue#(Word) getRespData();
+    method Action sendReqInstr(CacheReq req);
+    method ActionValue#(Word) getRespInstr();
+endinterface
