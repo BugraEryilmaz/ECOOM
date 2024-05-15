@@ -14,7 +14,6 @@ verilog:
 	mkdir -p $(BUILD_DIR)
 	bsc $(BSC_FLAGS) $(BINARY_NAME) -verilog -g mk$(BINARY_NAME) -u src/core/$(BINARY_NAME).bsv
 
-
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(BINARY_NAME)

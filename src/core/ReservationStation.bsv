@@ -19,6 +19,7 @@ interface RS#(numeric type nEntries, numeric type physicalRegSize, numeric type 
     method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
     method Action makeReady(Bit#(physicalRegSize) rs);
     method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue();
+    method Action flush();
 endinterface
 
 module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
@@ -29,6 +30,7 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
     FIFO#(element) putQueue <- mkBypassFIFO;
     FIFO#(Bit#(physicalRegSize)) readyQueue <- mkBypassFIFO;
     FIFO#(RSEntry#(physicalRegSize, robTagSize)) issueQueue <- mkBypassFIFO;
+    PulseWire flushing <- mkPulseWire;
 
     // HELPERS //
     function Bool isElemFree(Ehr#(3, Maybe#(element)) elem);
@@ -41,7 +43,7 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
     endfunction
 
     // RULES //
-    rule wakeUpReg;
+    rule wakeUpReg (!flushing);
         let rs = readyQueue.first;
         readyQueue.deq;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
@@ -54,7 +56,7 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
         end
     endrule
 
-    rule putEntry;
+    rule putEntry (!flushing);
         let ptr = findIndex(isElemFree, entries);
         if(isValid(ptr)) begin
             let idx = fromMaybe(?, ptr);
@@ -63,7 +65,7 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
         end
     endrule
 
-    rule prepareIssue;
+    rule prepareIssue (!flushing);
         let ptr = findIndex(isElemReady, entries);
         if(isValid(ptr)) begin
             let idx = fromMaybe(?, ptr);
@@ -72,19 +74,32 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
         end
     endrule
 
+    rule flushEntries (flushing);
+        putQueue.clear;
+        readyQueue.clear;
+        issueQueue.clear;
+
+        for(Integer i = 0; i < valueOf(nEntries); i = i + 1)
+            entries[i][0] <= tagged Invalid;
+    endrule
+
     // INTERFACE //
-    method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
+    method Action put(RSEntry#(physicalRegSize, robTagSize) entry) if (!flushing);
         putQueue.enq(entry);
     endmethod
 
-    method Action makeReady(Bit#(physicalRegSize) rs);
+    method Action makeReady(Bit#(physicalRegSize) rs) if (!flushing);
         readyQueue.enq(rs);
     endmethod
 
-    method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue();
+    method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue() if (!flushing);
         let elem = issueQueue.first;
         issueQueue.deq;
         return elem;
+    endmethod
+
+    method Action flush();
+        flushing.send();
     endmethod
 endmodule
 
@@ -102,5 +117,9 @@ module mkReservationStationSized(RS#(32, 5, 6));
     method ActionValue#(RSEntry#(5, 6)) issue();
         let val <- reservation.issue();
         return val;
+    endmethod
+
+    method Action flush();
+        reservation.flush();
     endmethod
 endmodule
