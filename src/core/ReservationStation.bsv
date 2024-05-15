@@ -7,13 +7,13 @@ import RVUtil::*;
 typedef struct {
     Bit#(robTagSize) tag;
     Bit#(32) pc;
-    DecodedInst inst;
+    DecodedInst dInst;
     Bool ready_rs1;
     Bool ready_rs2;
     Bit#(physicalRegSize) rs1;
     Bit#(physicalRegSize) rs2;
     Maybe#(Bit#(physicalRegSize)) rd;
-} RSEntry#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, Eq, FShow);
+} RSEntry#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);
 
 interface RS#(numeric type nEntries, numeric type physicalRegSize, numeric type robTagSize);
     method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
