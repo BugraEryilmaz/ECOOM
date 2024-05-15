@@ -11,7 +11,13 @@ typedef struct {
 
 typedef struct {
     Bit#(robTagSize) tag;
-    Bit#(32) pc;
     Maybe#(Bit#(physicalRegSize)) rd;
     Bit#(32) result;
+    Maybe#(Bit#(32)) jump_pc;
 } PEResult#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);
+
+interface PE#(numeric type physicalRegSize, numeric type robTagSize);
+    method Action put(PEInput#(physicalRegSize, robTagSize) entry);
+    method ActionValue#(PEResult#(physicalRegSize, robTagSize)) get();
+    method Action flush();
+endinterface
