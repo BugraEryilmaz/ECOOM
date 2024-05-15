@@ -3,13 +3,7 @@ import SpecialFIFOs::*;
 import RVUtil::*;
 import PEUtil::*;
 
-interface IALU#(numeric type physicalRegSize, numeric type robTagSize);
-    method Action put(PEInput#(physicalRegSize, robTagSize) entry);
-    method ActionValue#(PEResult#(physicalRegSize, robTagSize)) get();
-    method Action flush();
-endinterface
-
-module mkIALU(IALU#(physicalRegSize, robTagSize));
+module mkIALU(PE#(physicalRegSize, robTagSize));
 
     // Communication FIFOs //
     FIFO#(PEInput#(physicalRegSize, robTagSize)) inputFIFO <- mkBypassFIFO;
@@ -29,7 +23,7 @@ module mkIALU(IALU#(physicalRegSize, robTagSize));
             tag: in.tag,
             result: res,
             rd: in.rd,
-            pc: in.pc
+            jump_pc: Invalid
         });
     endrule
 
@@ -54,20 +48,10 @@ module mkIALU(IALU#(physicalRegSize, robTagSize));
     endmethod
 endmodule
 
-module mkIALUSized(IALU#(6, 6));
-    IALU#(6, 6) ialu <- mkIALU;
+module mkIALUSized(PE#(6, 6));
+    PE#(6, 6) ialu <- mkIALU;
 
-    method Action put(PEInput#(6, 6) entry);
-        ialu.put(entry);
-    endmethod
-
-    method ActionValue#(PEResult#(6, 6)) get();
-        let val <- ialu.get();
-        return val;
-    endmethod
-
-    method Action flush();
-        ialu.flush();
-    endmethod
-
+    method Action put(PEInput#(6, 6) entry) = ialu.put(entry);
+    method ActionValue#(PEResult#(6, 6)) get() = ialu.get();
+    method Action flush() = ialu.flush();
 endmodule
