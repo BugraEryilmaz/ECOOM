@@ -1,4 +1,5 @@
-import RegRename::*;
+`include "../src/core/RegRename.bsv"
+// import RegRename::*;
 import FIFO::*;
 
 module mkRegRenameTB(Empty);
