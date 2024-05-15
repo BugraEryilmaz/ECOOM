@@ -3,7 +3,7 @@ import SpecialFIFOs::*;
 import RVUtil::*;
 import PEUtil::*;
 
-module mkBal(PE#(physicalRegSize, robTagSize));
+module mkBAL(PE#(physicalRegSize, robTagSize));
 
     // Communication FIFOs //
     FIFO#(PEInput#(physicalRegSize, robTagSize)) inputFIFO <- mkBypassFIFO;
@@ -15,9 +15,8 @@ module mkBal(PE#(physicalRegSize, robTagSize));
         let in = inputFIFO.first;
         inputFIFO.deq;
 
-        let dInst = in.dInst;
-        let inst = dInst.inst;
-        let imm = getImmediate(dInst);
+        let inst = in.dInst.inst;
+        let imm = in.imm;
         let pc = in.pc;
 
         Bool isJAL = (inst[2] == 1'b1) && (inst[3] == 1'b1);
@@ -78,8 +77,8 @@ module mkBal(PE#(physicalRegSize, robTagSize));
     endmethod
 endmodule
 
-module mkBalSized(PE#(6, 6));
-    PE#(6, 6) pe <- mkBal;
+module mkBALSized(PE#(6, 6));
+    PE#(6, 6) pe <- mkBAL;
 
     method Action put(PEInput#(6, 6) entry) = pe.put(entry);
     method ActionValue#(PEResult#(6, 6)) get() = pe.get();

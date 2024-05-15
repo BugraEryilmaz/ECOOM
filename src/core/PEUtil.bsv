@@ -4,6 +4,7 @@ typedef struct {
     Bit#(robTagSize) tag;
     Bit#(32) pc;
     DecodedInst dInst;
+    Bit#(32) imm;
     Bit#(32) src1;
     Bit#(32) src2;
     Maybe#(Bit#(physicalRegSize)) rd;

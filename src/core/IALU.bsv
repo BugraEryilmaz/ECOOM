@@ -17,7 +17,7 @@ module mkIALU(PE#(physicalRegSize, robTagSize));
 
         let dInst = in.dInst;
         let inst = dInst.inst;
-        let res = execALU32(inst, in.src1, in.src2, getImmediate(dInst), in.pc);
+        let res = execALU32(inst, in.src1, in.src2, in.imm, in.pc);
 
         outputFIFO.enq(PEResult{
             tag: in.tag,
