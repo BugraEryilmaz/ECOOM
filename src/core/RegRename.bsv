@@ -56,12 +56,12 @@ module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         for ( Integer i = 0; i < valueOf(physicalRegCount); i = i + 1 ) begin
             if (graduatePhys.notEmpty && graduatePhys.first() == fromInteger(i)) begin
                 frees[i] = 1;
-                graduatePhys.deq();
             end else if (allocatePhys.notEmpty &&& allocatePhys.first() matches tagged Valid .allocateIdx &&& allocateIdx == fromInteger(i)) begin
                 frees[i] = 0;
-                allocatePhys.deq();
             end
         end
+        if (graduatePhys.notEmpty) graduatePhys.deq();
+        if (allocatePhys.notEmpty) allocatePhys.deq();
         freeList <= frees;
     endrule
 
