@@ -51,7 +51,6 @@ module mkBAL(PE#(physicalRegSize, robTagSize));
         outputFIFO.enq(PEResult{
             tag: in.tag,
             result: incPC,
-            rd: in.rd,
             jump_pc: result
         });
     endrule
