@@ -10,8 +10,8 @@ typedef struct {
     DecodedInst dInst;
     Bool ready_rs1;
     Bool ready_rs2;
-    Bit#(physicalRegSize) rs1;
-    Bit#(physicalRegSize) rs2;
+    Maybe#(Bit#(physicalRegSize)) rs1;
+    Maybe#(Bit#(physicalRegSize)) rs2;
     Maybe#(Bit#(physicalRegSize)) rd;
 } RSEntry#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);
 
@@ -27,37 +27,50 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
         Alias#(RSEntry#(physicalRegSize, robTagSize), element)
     );
     Vector#(nEntries, Ehr#(3, Maybe#(element))) entries <- replicateM(mkEhr(Invalid));
+    RWire#(Vector#(nEntries, Maybe#(element))) entriesWire <- mkRWire;
     FIFO#(element) putQueue <- mkBypassFIFO;
     FIFO#(Bit#(physicalRegSize)) readyQueue <- mkBypassFIFO;
     FIFO#(RSEntry#(physicalRegSize, robTagSize)) issueQueue <- mkBypassFIFO;
     PulseWire flushing <- mkPulseWire;
 
     // HELPERS //
-    function Bool isElemFree(Ehr#(3, Maybe#(element)) elem);
-        return !isValid(elem[1]);
+    function Bool isElemFree(Maybe#(element) elem);
+        return !isValid(elem);
     endfunction
 
-    function Bool isElemReady(Ehr#(3, Maybe#(element)) elem);
-        let valElem = fromMaybe(?, elem[2]);
-        return isValid(elem[2]) && valElem.ready_rs1 && valElem.ready_rs2;
+    function Bool isElemReady(Maybe#(element) elem);
+        let valElem = fromMaybe(?, elem);
+        return isValid(elem) && valElem.ready_rs1 && valElem.ready_rs2;
     endfunction
 
     // RULES //
-    rule wakeUpReg (!flushing);
+    rule updateEntries (!flushing);
+        Vector#(nEntries, Maybe#(element)) entriesSignal = ?;
+        for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
+            entriesSignal[i] = entries[i][0];
+        end
+        entriesWire.wset(entriesSignal);
+    endrule
+
+    rule wakeUpReg (!flushing && isValid(entriesWire.wget));
         let rs = readyQueue.first;
         readyQueue.deq;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
-            if(isValid(entries[i][0])) begin
-                let val = fromMaybe(?, entries[i][0]);
-                val.ready_rs1 = val.ready_rs1 || (val.rs1 == rs);
-                val.ready_rs2 = val.ready_rs2 || (val.rs2 == rs);
+            let x = fromMaybe(?, entriesWire.wget());
+            if(isValid(x[i])) begin
+                let val = fromMaybe(?, x[i]);
+                if(val.rs1 matches tagged Valid .rs1)
+                    val.ready_rs1 = val.ready_rs1 || (rs1 == rs);
+
+                if(val.rs2 matches tagged Valid .rs2)
+                    val.ready_rs2 = val.ready_rs2 || (rs2 == rs);
                 entries[i][0] <= tagged Valid(val);
             end
         end
     endrule
 
-    rule putEntry (!flushing);
-        let ptr = findIndex(isElemFree, entries);
+    rule putEntry (!flushing && isValid(entriesWire.wget));
+        let ptr = findIndex(isElemFree, fromMaybe(?, entriesWire.wget));
         if(isValid(ptr)) begin
             let idx = fromMaybe(?, ptr);
             entries[idx][1] <= tagged Valid(putQueue.first);
@@ -65,11 +78,11 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
         end
     endrule
 
-    rule prepareIssue (!flushing);
-        let ptr = findIndex(isElemReady, entries);
+    rule prepareIssue (!flushing && isValid(entriesWire.wget));
+        let ptr = findIndex(isElemReady, fromMaybe(?, entriesWire.wget));
         if(isValid(ptr)) begin
             let idx = fromMaybe(?, ptr);
-            issueQueue.enq(fromMaybe(?, entries[idx][2]));
+            issueQueue.enq(fromMaybe(?, fromMaybe(?, entriesWire.wget)[idx]));
             entries[idx][2] <= tagged Invalid;
         end
     endrule
@@ -105,21 +118,5 @@ endmodule
 
 module mkReservationStationSized(RS#(32, 5, 6));
     RS#(32, 5, 6) reservation <- mkReservationStation;
-
-    method Action put(RSEntry#(5, 6) entry);
-        reservation.put(entry);
-    endmethod
-
-    method Action makeReady(Bit#(5) rs);
-        reservation.makeReady(rs);
-    endmethod
-
-    method ActionValue#(RSEntry#(5, 6)) issue();
-        let val <- reservation.issue();
-        return val;
-    endmethod
-
-    method Action flush();
-        reservation.flush();
-    endmethod
+    return reservation;
 endmodule
