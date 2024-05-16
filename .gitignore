@@ -5,3 +5,4 @@ info/
 *.so
 *.bo
 *.ba
+**/.DS_Store
