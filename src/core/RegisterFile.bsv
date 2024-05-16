@@ -7,7 +7,7 @@ interface RFIfc#(numeric type idx_bits, numeric type data_bits);
     method Action write (Bit#(idx_bits) idx, Bit#(data_bits) data);
 endinterface
 
-module mkRegFile(RFIfc#(idx_bits, data_bits));
+module mkRegisterFile(RFIfc#(idx_bits, data_bits));
     Vector#(TExp#(idx_bits), ConfigReg#(Bit#(data_bits))) rf <- replicateM(mkConfigReg(0));
     Wire#(Bit#(data_bits)) data_forward <- (mkWire);
     RWire#(Bit#(idx_bits)) idx_forward <- (mkRWire);
@@ -31,8 +31,8 @@ module mkRegFile(RFIfc#(idx_bits, data_bits));
     endmethod
 endmodule
 
-module mkRegFileSized(RFIfc#(6, 32));
-    RFIfc#(6, 32) rf <- mkRegFile;
+module mkRegisterFileSized(RFIfc#(6, 32));
+    RFIfc#(6, 32) rf <- mkRegisterFile;
     method ActionValue#(Bit#(32)) read (Bit#(6) idx) = rf.read(idx);
     method Action write (Bit#(6) idx, Bit#(32) data) = rf.write(idx, data);
 endmodule
