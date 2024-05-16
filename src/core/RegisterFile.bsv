@@ -15,10 +15,8 @@ module mkRegisterFile(RFIfc#(idx_bits, data_bits));
 
     method ActionValue#(Bit#(data_bits)) read (Bit#(idx_bits) idx);
         Bit#(data_bits) ret = rf.sub(idx);
-        if (idx_forward.wget matches tagged Valid .is_forwarding) begin
-            if (idx == is_forwarding) begin
-                ret = data_forward;
-            end
+        if (idx_forward.wget matches tagged Valid .is_forwarding &&& idx == is_forwarding) begin
+            ret = data_forward;
         end
         return ret;
     endmethod
