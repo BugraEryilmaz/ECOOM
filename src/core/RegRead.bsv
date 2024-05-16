@@ -43,8 +43,7 @@ module mkRegRead(RegRead#(physicalRegSize, robTagSize));
             dInst: val.dInst,
             imm: imm,
             src1: src1,
-            src2: src2,
-            rd: val.rd
+            src2: src2
         });
     endrule
 

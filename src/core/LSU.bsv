@@ -67,8 +67,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
             tag: in.tag,
             funct3: funct3,
             isStore: !isLoad,
-            offset: offset,
-            rd: in.rd
+            offset: offset
         });
     endrule
 
@@ -94,7 +93,6 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
             endcase
             outputFIFO.enq(PEResult{
                 tag: req.tag,
-                rd: req.rd,
                 result: result,
                 jump_pc: Invalid
             });
