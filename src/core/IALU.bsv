@@ -17,7 +17,7 @@ module mkIALU(PE#(physicalRegSize, robTagSize));
 
         let dInst = in.dInst;
         let inst = dInst.inst;
-        let res = execALU32(inst, in.src1, in.src2, getImmediate(dInst), in.pc);
+        let res = execALU32(inst, in.src1, in.src2, in.imm, in.pc);
 
         outputFIFO.enq(PEResult{
             tag: in.tag,
@@ -50,8 +50,5 @@ endmodule
 
 module mkIALUSized(PE#(6, 6));
     PE#(6, 6) ialu <- mkIALU;
-
-    method Action put(PEInput#(6, 6) entry) = ialu.put(entry);
-    method ActionValue#(PEResult#(6, 6)) get() = ialu.get();
-    method Action flush() = ialu.flush();
+    return ialu;
 endmodule

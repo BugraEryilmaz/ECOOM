@@ -1,4 +1,6 @@
 build/
+obj/
+info/
 *.sched
 *.so
 *.bo

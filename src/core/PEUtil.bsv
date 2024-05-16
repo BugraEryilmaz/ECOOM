@@ -4,6 +4,7 @@ typedef struct {
     Bit#(robTagSize) tag;
     Bit#(32) pc;
     DecodedInst dInst;
+    Bit#(32) imm;
     Bit#(32) src1;
     Bit#(32) src2;
     Maybe#(Bit#(physicalRegSize)) rd;
@@ -21,3 +22,11 @@ interface PE#(numeric type physicalRegSize, numeric type robTagSize);
     method ActionValue#(PEResult#(physicalRegSize, robTagSize)) get();
     method Action flush();
 endinterface
+
+typedef struct {
+    Bit#(robTagSize) tag;
+    Bit#(3) funct3;
+    Bool isStore;
+    Bit#(2) offset;
+    Maybe#(Bit#(physicalRegSize)) rd;
+} MemBussiness#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);

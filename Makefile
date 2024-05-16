@@ -1,7 +1,10 @@
 .DEFAULT_GOAL := all
-BUILD_DIR=../../build
+BUILD_DIR=build
+OBJ_DIR=obj
+INFO_DIR=info
+INCLUDE_DIR=src/cache:src/core
 BINARY_NAME=ecoom
-BSC_FLAGS=--aggressive-conditions --show-schedule -remove-dollar -vdir $(BUILD_DIR) -bdir $(BUILD_DIR) -simdir $(BUILD_DIR) -info-dir $(BUILD_DIR) -o 
+BSC_FLAGS=--aggressive-conditions --show-schedule -sched-dot -remove-dollar -p +:$(INCLUDE_DIR) -vdir $(BUILD_DIR) -simdir $(BUILD_DIR)  -bdir $(OBJ_DIR) -info-dir $(INFO_DIR) -o 
 
 .PHONY: clean all verilog $(BINARY_NAME)
 
@@ -12,13 +15,14 @@ $(BINARY_NAME):
 
 verilog:
 	mkdir -p $(BUILD_DIR)
-	cd src/core && bsc $(BSC_FLAGS) $(BINARY_NAME) -verilog -g mk$(BINARY_NAME)Sized -u $(BINARY_NAME).bsv
+	mkdir -p $(OBJ_DIR)
+	mkdir -p $(INFO_DIR)
+	bsc $(BSC_FLAGS) $(BINARY_NAME) -verilog -g mk$(BINARY_NAME)Sized -u ./src/core/$(BINARY_NAME).bsv
 
 clean:
-	rm -rf $(BUILD_DIR)
-	rm -f $(BINARY_NAME)
 	find . -name "*.so" -type f -delete
 	find . -name "*.sched" -type f -delete
+	find . -name "*.dot" -type f -delete
 	find . -name "*.bo" -type f -delete
 	find . -name "*.ba" -type f -delete
 
