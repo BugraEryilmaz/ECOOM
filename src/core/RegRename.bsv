@@ -2,8 +2,6 @@ import Vector::*;
 import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
-import find::*;
-// import Ehr::*;
 
 interface RegRenameIfc#(numeric type archRegCount, numeric type physicalRegCount);
 
@@ -18,8 +16,6 @@ endinterface
 module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         provisos (
             Log#(archRegCount, archBits), Log#(physicalRegCount, physBits),
-            Add#(a__, 2, TLog#(physicalRegCount)),
-            Add#(4, b__, physicalRegCount),
             Alias#(Maybe#(Bit#(physBits)), maybePhysReg),
             Alias#(Bit#(physBits), physReg),
             Alias#(Bit#(archBits), archReg)
@@ -79,7 +75,7 @@ module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         if (idx != 0) begin
             // Findelem returns a maybe, so we need to fromMaybe it
             // And returns uint, so we need to convert it to a bit using pack
-            allocated = tagged Valid pack(fromMaybe(?, find(1, freeBits)));
+            allocated = tagged Valid pack(fromMaybe(?, findElem(1, freeBits)));
         end
         allocateArch.enq(idx);
         allocatePhys.enq(allocated);

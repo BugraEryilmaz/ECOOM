@@ -8,7 +8,7 @@ import PEUtil::*;
 
 typedef struct {
     Bool isStore;
-    Bit#(5) arch_rd;
+    Maybe#(Bit#(5)) arch_rd;
     Maybe#(Bit#(physicalRegSize)) phys_rd;
     Maybe#(Bit#(physicalRegSize)) grad_rd;
 } ROBReservation#(numeric type physicalRegSize) deriving (Bits, FShow);

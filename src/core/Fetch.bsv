@@ -6,7 +6,7 @@ import MemTypes::*;
 typedef struct {
     Bit#(32) pc;
     Bit#(32) ppc;
-    Bit#(32) instr;
+    Bit#(32) inst;
 } FetchToDecode deriving(Bits, FShow);
 
 typedef struct {
@@ -68,7 +68,7 @@ module mkFetch(Fetch);
             outputFIFO.enq(FetchToDecode{
                 pc: info.pc,
                 ppc: info.ppc,
-                instr: resp
+                inst: resp
             });
         end
     endrule
