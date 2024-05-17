@@ -40,6 +40,16 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         let entry = putFIFO.first;
         putFIFO.deq;
 
+        // TODO set and reset RDBY ??
+
+        let ready_rs1 <- rdby.read(fromMaybe(?, entry.rs1));
+        let ready_rs2 <- rdby.read(fromMaybe(?, entry.rs2));
+        entry.ready_rs1 = isValid(entry.rs1) ? (ready_rs1 == 1 ? True : False) : True;
+        entry.ready_rs2 = isValid(entry.rs2) ? (ready_rs2 == 1 ? True : False) : True;
+        if(entry.rd matches tagged Valid .rd) begin
+            rdby.rst(rd);
+        end
+
         if(entry.pe == LSU) rsLSU.put(entry);
         else rsInteger.put(entry);
     endrule
@@ -87,6 +97,7 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     method Action makeReady(Bit#(physicalRegSize) rs) if(!flushing);
         rsInteger.makeReady(rs);
         rsLSU.makeReady(rs);
+        rdby.set(rs);
     endmethod
 
     method Action flush() = flushing.send();

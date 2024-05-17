@@ -14,7 +14,7 @@ interface Issue#(numeric type physicalRegCount, numeric type nRobElements);
     method Action complete(PEResult#(TLog#(physicalRegCount), TLog#(nRobElements)) result);
     method ActionValue#(ROBResult#(TLog#(physicalRegCount))) drain();
     method Action graduate (Maybe#(Bit#(TLog#(physicalRegCount))) old_src);
-    method Action flush (Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
+    method Action flush(Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
 endinterface
 
 module mkIssue(Issue#(physicalRegCount, nRobElements))
