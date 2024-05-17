@@ -70,7 +70,8 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
             ready_rs1: ?,
             ready_rs2: ?,
             rs1: prs1,
-            rs2: prs2
+            rs2: prs2,
+            rd: prd
         });
     endrule
 

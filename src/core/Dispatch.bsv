@@ -40,8 +40,6 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         let entry = putFIFO.first;
         putFIFO.deq;
 
-        // TODO set and reset RDBY ??
-
         let ready_rs1 <- rdby.read(fromMaybe(?, entry.rs1));
         let ready_rs2 <- rdby.read(fromMaybe(?, entry.rs2));
         entry.ready_rs1 = isValid(entry.rs1) ? (ready_rs1 == 1 ? True : False) : True;
