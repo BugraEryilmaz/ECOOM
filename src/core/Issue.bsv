@@ -13,7 +13,8 @@ interface Issue#(numeric type physicalRegCount, numeric type nRobElements);
     method ActionValue#(RSEntry#(TLog#(physicalRegCount), TLog#(nRobElements))) get();
     method Action complete(PEResult#(TLog#(physicalRegCount), TLog#(nRobElements)) result);
     method ActionValue#(ROBResult#(TLog#(physicalRegCount))) drain();
-    method Action flush();
+    method Action graduate (Maybe#(Bit#(TLog#(physicalRegCount))) old_src);
+    method Action flush (Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
 endinterface
 
 module mkIssue(Issue#(physicalRegCount, nRobElements))
@@ -57,7 +58,12 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
             grad_rd: old_prd
         });
 
+        PEType pe = IALU;
+        if(isControlInst(dInst)) pe = BAL;
+        else if(isMemoryInst(dInst)) pe = LSU;
+
         outputFIFO.enq(RSEntry{
+            pe: pe,
             tag: tag,
             pc: f2d.pc,
             dInst: dInst,
@@ -85,8 +91,12 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
 
     method Action complete(PEResult#(physicalRegSize, robTagSize) result) if (!flushing) = rob.complete(result);
     method ActionValue#(ROBResult#(physicalRegSize)) drain() if (!flushing) = rob.drain();
+    method Action graduate (Maybe#(Bit#(TLog#(physicalRegCount))) old_src) if (!flushing) = regRename.graduate(old_src);
 
-    method Action flush() = flushing.send();
+    method Action flush(Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
+        flushing.send();
+        regRename.rewind(oldState, oldFree);
+    endmethod
 endmodule
 
 module mkIssueSized(Issue#(64, 64));

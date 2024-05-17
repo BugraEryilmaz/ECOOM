@@ -3,8 +3,10 @@ import FIFO::*;
 import SpecialFIFOs::*;
 import Ehr::*;
 import RVUtil::*;
+import PEUtil::*;
 
 typedef struct {
+    PEType pe;
     Bit#(robTagSize) tag;
     Bit#(32) pc;
     DecodedInst dInst;

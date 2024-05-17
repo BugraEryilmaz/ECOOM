@@ -1,6 +1,13 @@
 import RVUtil::*;
 
+typedef enum {
+    IALU, 
+    BAL,
+    LSU
+} PEType deriving (Bits, Eq, FShow);
+
 typedef struct {
+    PEType pe;
     Bit#(robTagSize) tag;
     Bit#(32) pc;
     DecodedInst dInst;
