@@ -50,6 +50,7 @@ module mkBAL(PE#(physicalRegSize, robTagSize));
 
         outputFIFO.enq(PEResult{
             tag: in.tag,
+            rd: in.rd,
             result: incPC,
             jump_pc: result
         });

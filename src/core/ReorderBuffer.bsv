@@ -9,18 +9,18 @@ import PEUtil::*;
 typedef struct {
     Bool isStore;
     Maybe#(Bit#(5)) arch_rd;
-    Maybe#(Bit#(physicalRegSize)) phys_rd;
     Maybe#(Bit#(physicalRegSize)) grad_rd;
 } ROBReservation#(numeric type physicalRegSize) deriving (Bits, FShow);
 
 typedef struct {
     Bit#(32) result;
     Maybe#(Bit#(32)) jump_pc;
-} ROBEntry deriving (Bits, FShow);
+    Maybe#(Bit#(physicalRegSize)) phys_rd;
+} ROBEntry#(numeric type physicalRegSize) deriving (Bits, FShow);
 
 typedef struct {
     ROBReservation#(physicalRegSize) reservation;
-    ROBEntry completion; 
+    ROBEntry#(physicalRegSize) completion; 
 } ROBResult#(numeric type physicalRegSize) deriving (Bits, FShow);
 
 interface ROB#(numeric type nEntries, numeric type physicalRegSize);
@@ -36,7 +36,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     );
 
     // Data Structures
-    CompletionBuffer#(nEntries, ROBEntry) cb <- mkCompletionBuffer;
+    CompletionBuffer#(nEntries, ROBEntry#(physicalRegSize)) cb <- mkCompletionBuffer;
     FIFO#(robReservation) rs <- mkSizedFIFO(valueOf(nEntries));
     Ehr#(2, Bit#(TLog#(TAdd#(nEntries, 1)))) inflightCounter <- mkEhr(0);
     Reg#(Bit#(TLog#(TAdd#(nEntries, 1)))) posionCounter <- mkReg(0);
@@ -75,6 +75,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result) if (!flushing);
         cb.complete.put(tuple2(result.tag, ROBEntry{
             result: result.result,
+            phys_rd: result.rd,
             jump_pc: result.jump_pc
         }));
     endmethod

@@ -5,7 +5,7 @@ import RVUtil::*;
 import PEUtil::*;
 import MemTypes::*;
 
-interface LSU#(numeric type physicalRegSize, numeric type robTagSize, numeric type inflightCounterSize);
+interface LSU#(numeric type physicalRegSize, numeric type robTagSize, numeric type nInflight);
     interface PE#(physicalRegSize, robTagSize) pe;
     method Action sendStore();
 
@@ -65,6 +65,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
 
         inflightFIFO.enq(MemBussiness{
             tag: in.tag,
+            rd: in.rd,
             funct3: funct3,
             isStore: !isLoad,
             offset: offset
@@ -93,6 +94,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
             endcase
             outputFIFO.enq(PEResult{
                 tag: req.tag,
+                rd: req.rd,
                 result: result,
                 jump_pc: Invalid
             });

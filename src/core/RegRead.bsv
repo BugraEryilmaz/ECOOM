@@ -38,12 +38,14 @@ module mkRegRead(RegRead#(physicalRegSize, robTagSize));
         Bit#(32) imm = getImmediate(val.dInst);
 
         outputFIFO.enq(PEInput {
+            pe: val.pe,
             tag: val.tag,
             pc: val.pc,
             dInst: val.dInst,
             imm: imm,
             src1: src1,
-            src2: src2
+            src2: src2,
+            rd: val.rd
         });
     endrule
 

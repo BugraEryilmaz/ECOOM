@@ -54,7 +54,6 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         let tag <- rob.reserve(ROBReservation{
             isStore: isStore,
             arch_rd: dInst.valid_rd ? tagged Valid rd : tagged Invalid,
-            phys_rd: prd,
             grad_rd: old_prd
         });
 

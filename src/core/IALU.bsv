@@ -21,6 +21,7 @@ module mkIALU(PE#(physicalRegSize, robTagSize));
 
         outputFIFO.enq(PEResult{
             tag: in.tag,
+            rd: in.rd,
             result: res,
             jump_pc: Invalid
         });
