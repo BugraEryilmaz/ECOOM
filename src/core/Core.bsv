@@ -9,12 +9,14 @@ import ReorderBuffer::*;
 import PEUtil::*;
 import KonataHelper::*;
 
-interface Core#(numeric type nPhysicalRegs, numeric type nRobElements, numeric type nRSEntries, numeric type nInflightDmem);
-    method ActionValue#(CacheReq) imemSendReq();
-    method Action imemGetResp(Word resp);
+typedef struct { Bit#(4) byte_en; Bit#(32) addr; Bit#(32) data; } Mem deriving (Eq, FShow, Bits);
 
-    method ActionValue#(CacheReq) dmemSendReq();
-    method Action dmemGetResp(Word resp);
+interface Core#(numeric type nPhysicalRegs, numeric type nRobElements, numeric type nRSEntries, numeric type nInflightDmem);
+    method ActionValue#(Mem) imemSendReq();
+    method Action imemGetResp(Mem resp);
+
+    method ActionValue#(Mem) dmemSendReq();
+    method Action dmemGetResp(Mem resp);
 endinterface
 
 module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
@@ -119,19 +121,31 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
     endrule
 
     // METHODS //
-    method ActionValue#(CacheReq) imemSendReq();
+    method ActionValue#(Mem) imemSendReq();
         let val <- frontend.sendReq;
-        return val;
+        return Mem{
+            byte_en: val.word_byte,
+            addr: val.addr,
+            data: val.data
+        };
     endmethod
 
-    method Action imemGetResp(Word resp) = frontend.getResp(resp);
+    method Action imemGetResp(Mem resp);
+        frontend.getResp(resp.data);
+    endmethod
 
-    method ActionValue#(CacheReq) dmemSendReq();
+    method ActionValue#(Mem) dmemSendReq();
         let val <- backend.sendReq;
-        return val;
+        return Mem{
+            byte_en: val.word_byte,
+            addr: val.addr,
+            data: val.data
+        };
     endmethod
 
-    method Action dmemGetResp(Word resp) = backend.getResp(resp);
+    method Action dmemGetResp(Mem resp);
+        backend.getResp(resp.data);
+    endmethod
 
 endmodule
 
