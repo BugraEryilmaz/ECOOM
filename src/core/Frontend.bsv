@@ -9,6 +9,7 @@ import Issue::*;
 import Dispatch::*;
 import ReorderBuffer::*;
 import ReservationStation::*;
+import KonataHelper::*;
 
 interface Frontend#(numeric type nPhysicalRegs, numeric type nRobElements, numeric type nRSEntries);
     // IMEM Interface
@@ -25,6 +26,8 @@ interface Frontend#(numeric type nPhysicalRegs, numeric type nRobElements, numer
 
     // Jump and rewind
     method Action jumpAndRewind(Bit#(32) addr, Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) oldRegRename, Bit#(nPhysicalRegs) oldFreeList);
+
+    method Action setFile(File file);
 endinterface
 
 
@@ -41,28 +44,32 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     Dispatch#(physicalRegSize, robTagSize, nRSEntries) dispatch <- mkDispatch;
     PulseWire flushing <- mkPulseWire;
 
+    let lfh <- mkReg(InvalidFile);
+	Reg#(KonataId) fresh_id <- mkReg(0);
+    Reg#(Bool) starting <- mkReg(True);
+
     // Communication FIFOs //
-    FIFO#(FetchToDecode) f2i <- mkFIFO;
+    FIFO#(FetchToDecode) f2i <- mkBypassFIFO;
     FIFO#(rsEntry) i2d <- mkFIFO;
 
     // RULES
-    rule rlF2Q (!flushing);
+    rule rlF2Q (!starting && !flushing);
         let val <- fetch.getInst;
         f2i.enq(val);
     endrule
 
-    rule rlQ2I (!flushing);
+    rule rlQ2I (!starting && !flushing);
         let val = f2i.first;
         f2i.deq;
         issue.put(val);
     endrule
 
-    rule rlI2Q (!flushing);
+    rule rlI2Q (!starting && !flushing);
         let val <- issue.get;
         i2d.enq(val);
     endrule
 
-    rule rlQ2D (!flushing);
+    rule rlQ2D (!starting && !flushing);
         let val = i2d.first;
         i2d.deq;
         dispatch.put(val);
@@ -105,6 +112,14 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
         issue.flush(oldRegRename, oldFreeList);
         dispatch.flush();
         flushing.send();
+    endmethod
+
+    method Action setFile(File file) if(starting);
+        lfh <= file;
+        starting <= False;
+        fetch.setFile(file);
+        issue.setFile(file);
+        dispatch.setFile(file);
     endmethod
 endmodule
 

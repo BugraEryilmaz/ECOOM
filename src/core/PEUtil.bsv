@@ -1,4 +1,5 @@
 import RVUtil::*;
+import KonataHelper::*;
 
 typedef enum {
     IALU, 
@@ -15,6 +16,7 @@ typedef struct {
     Bit#(32) src1;
     Bit#(32) src2;
     Maybe#(Bit#(physicalRegSize)) rd;
+    KonataId k_id;
 } PEInput#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);
 
 typedef struct {
@@ -22,6 +24,7 @@ typedef struct {
     Maybe#(Bit#(physicalRegSize)) rd;
     Bit#(32) result;
     Maybe#(Bit#(32)) jump_pc;
+    KonataId k_id;
 } PEResult#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);
 
 interface PE#(numeric type physicalRegSize, numeric type robTagSize);
@@ -36,4 +39,5 @@ typedef struct {
     Bit#(3) funct3;
     Bool isStore;
     Bit#(2) offset;
+    KonataId k_id;
 } MemBussiness#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);

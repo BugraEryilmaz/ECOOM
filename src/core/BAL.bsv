@@ -52,7 +52,8 @@ module mkBAL(PE#(physicalRegSize, robTagSize));
             tag: in.tag,
             rd: in.rd,
             result: incPC,
-            jump_pc: result
+            jump_pc: result,
+            k_id: in.k_id
         });
     endrule
 

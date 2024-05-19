@@ -9,6 +9,7 @@ import LSU::*;
 import CommonDataBus::*;
 import ReservationStation::*;
 import MemTypes::*;
+import KonataHelper::*;
 
 interface Backend#(numeric type physicalRegSize, numeric type robTagSize, numeric type nInflight);
     method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
@@ -18,6 +19,8 @@ interface Backend#(numeric type physicalRegSize, numeric type robTagSize, numeri
     method Action sendStore();
     method ActionValue#(CacheReq) sendReq();
     method Action getResp(Word resp);
+
+    method Action setFile(File file);
 endinterface
 
 module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
@@ -25,6 +28,7 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
         Alias#(PEResult#(physicalRegSize, robTagSize), peResult),
         Alias#(PEInput#(physicalRegSize, robTagSize), peInput)
     );
+
     // Internal Structures //
     PulseWire flushing <- mkPulseWire;
     RegRead#(physicalRegSize, robTagSize) regRead <- mkRegRead;
@@ -33,16 +37,21 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
     LSU#(physicalRegSize, robTagSize, nInflight) lsu <- mkLSU;
     CDB#(3, physicalRegSize, robTagSize) cdb <- mkCommonDataBus;
 
+    let lfh <- mkReg(InvalidFile);
+	Reg#(KonataId) fresh_id <- mkReg(0);
+    Reg#(Bool) starting <- mkReg(True);
+
     // Communication FIFOs //
     FIFO#(peInput) rrFIFO <- mkFIFO;
 
     // RULES //
-    rule rlReadRead(!flushing);
+    rule rlReadRead(!starting && !flushing);
         let val <- regRead.get();
         rrFIFO.enq(val);
+        stageKonata(lfh, val.k_id, "Rr");
     endrule
 
-    rule rlArbit (!flushing);
+    rule rlArbit (!starting && !flushing);
         let val = rrFIFO.first;
         rrFIFO.deq();
         case(val.pe) 
@@ -52,19 +61,22 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
         endcase
     endrule
 
-    rule rlIALU (!flushing);
+    rule rlIALU (!starting && !flushing);
         let val <- ialu.get();
         cdb.ports[0].put(val);
+        stageKonata(lfh, val.k_id, "Rw");
     endrule
 
-    rule rlBAL (!flushing);
+    rule rlBAL (!starting && !flushing);
         let val <- bal.get();
         cdb.ports[1].put(val);
+        stageKonata(lfh, val.k_id, "Rw");
     endrule
 
-    rule rlLSU (!flushing);
+    rule rlLSU (!starting && !flushing);
         let val <- lsu.pe.get();
         cdb.ports[2].put(val);
+        stageKonata(lfh, val.k_id, "Rw");
     endrule
 
     // METHODS //
@@ -91,6 +103,11 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
     method Action sendStore() if (!flushing) = lsu.sendStore;
     method ActionValue#(CacheReq) sendReq() = lsu.sendReq;
     method Action getResp(Word resp) = lsu.getResp(resp);
+
+    method Action setFile(File file) if(starting);
+        lfh <= file;
+        starting <= False;
+    endmethod
 endmodule
 
 

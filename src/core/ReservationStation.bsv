@@ -4,6 +4,7 @@ import SpecialFIFOs::*;
 import Ehr::*;
 import RVUtil::*;
 import PEUtil::*;
+import KonataHelper::*;
 
 typedef struct {
     PEType pe;
@@ -15,6 +16,7 @@ typedef struct {
     Maybe#(Bit#(physicalRegSize)) rs1;
     Maybe#(Bit#(physicalRegSize)) rs2;
     Maybe#(Bit#(physicalRegSize)) rd;
+    KonataId k_id;
 } RSEntry#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);
 
 interface RS#(numeric type nEntries, numeric type physicalRegSize, numeric type robTagSize);

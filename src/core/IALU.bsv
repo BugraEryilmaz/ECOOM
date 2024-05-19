@@ -23,7 +23,8 @@ module mkIALU(PE#(physicalRegSize, robTagSize));
             tag: in.tag,
             rd: in.rd,
             result: res,
-            jump_pc: Invalid
+            jump_pc: Invalid,
+            k_id: in.k_id
         });
     endrule
 

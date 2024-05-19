@@ -34,6 +34,13 @@ function ActionValue#(KonataId) fetch1Konata(File f, Reg#(KonataId) konataCtr,Th
     endactionvalue
 endfunction
 
+function Action stageKonata(File f, KonataId konataCtr, String stage);
+    action
+        // $display("E\t%d\t%d\t%s",konataCtr,0,"F");
+        $fdisplay(f,"S\t%d\t%d\t%s",konataCtr,0,stage);
+    endaction
+endfunction
+
 function ActionValue#(KonataId) nfetchKonata(File f, Reg#(KonataId) konataCtr,ThreadId tid, Integer k);
     // Return the first id of the consecutive k id allocated
     actionvalue
@@ -51,12 +58,14 @@ function Action decodeKonata(File f, KonataId konataCtr);
         $fdisplay(f,"S\t%d\t%d\t%s",konataCtr,0,"D");
     endaction
 endfunction
+
 function Action executeKonata(File f, KonataId konataCtr);
     action
         // $display("E\t%d\t%d\t%s",konataCtr,0,"D");
         $fdisplay(f,"S\t%d\t%d\t%s",konataCtr,0,"E");
     endaction
 endfunction
+
 function Action writebackKonata(File f, KonataId konataCtr);
     action
         $fdisplay(f,"S\t%d\t%d\t%s",konataCtr,0,"W");
@@ -84,6 +93,7 @@ function Action labelKonataLeft(File f, KonataId konataCtr, Fmt s);
         $fdisplay(f, "L\t%d\t%d\t", konataCtr, 0, s);
     endaction
 endfunction
+
 function Action labelKonataMouse(File f, KonataId konataCtr, Fmt s);
     action
         // Squash have id 0

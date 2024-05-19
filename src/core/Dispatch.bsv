@@ -10,12 +10,15 @@ import ReservationStationOrdered::*;
 import ReorderBuffer::*;
 import RegRename::*;
 import RDYB::*;
+import KonataHelper::*;
 
 interface Dispatch#(numeric type physicalRegSize, numeric type robTagSize, numeric type nRSEntries);
     method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
     method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) get(); 
     method Action makeReady(Bit#(physicalRegSize) rs);
     method Action flush();
+
+    method Action setFile(File file);
 endinterface
 
 module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
@@ -30,6 +33,10 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     RS#(nRSEntries, physicalRegSize, robTagSize) rsLSU <- mkReservationStationOrdered;
     RDYBIfc#(physicalRegSize) rdby <- mkRDYB;
 
+    let lfh <- mkReg(InvalidFile);
+	Reg#(KonataId) fresh_id <- mkReg(0);
+    Reg#(Bool) starting <- mkReg(True);
+
     // Communication FIFOs //
     FIFO#(rsEntry) putFIFO <- mkBypassFIFO;
     FIFO#(rsEntry) getFIFO <- mkBypassFIFO;
@@ -37,7 +44,7 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     FIFOF#(rsEntry) lsuIssue <- mkBypassFIFOF;
 
     // RULES //
-    rule rlEnqueue (!flushing);
+    rule rlEnqueue (!starting && !flushing);
         let entry = putFIFO.first;
         putFIFO.deq;
 
@@ -53,17 +60,17 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         else rsInteger.put(entry);
     endrule
 
-    rule rlIntDispatch (!flushing && aluIssue.notFull);
+    rule rlIntDispatch (!starting && !flushing && aluIssue.notFull);
         let val <- rsInteger.issue;
         aluIssue.enq(val);
     endrule
 
-    rule rlLsuDispatch (!flushing && lsuIssue.notFull);
+    rule rlLsuDispatch (!starting && !flushing && lsuIssue.notFull);
         let val <- rsLSU.issue;
         lsuIssue.enq(val);
     endrule
 
-    rule rlDispatch (!flushing && (aluIssue.notEmpty || lsuIssue.notEmpty));
+    rule rlDispatch (!starting && !flushing && (aluIssue.notEmpty || lsuIssue.notEmpty));
         let val = ?;
         if(lsuIssue.notEmpty) begin
             val = lsuIssue.first;
@@ -74,9 +81,11 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         end
 
         getFIFO.enq(val);
+
+        stageKonata(lfh, val.k_id, "Ds");
     endrule
 
-    rule rlFlush (flushing);
+    rule rlFlush (!starting && flushing);
         rsInteger.flush();
         rsLSU.flush();
         rdby.flush();
@@ -100,6 +109,11 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     endmethod
 
     method Action flush() = flushing.send();
+
+    method Action setFile(File file) if(starting);
+        lfh <= file;
+        starting <= False;
+    endmethod
 endmodule
 
 module mkDispatchSized(Dispatch#(6, 6, 16));

@@ -2,17 +2,20 @@ import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
 import MemTypes::*;
+import KonataHelper::*;
 
 typedef struct {
     Bit#(32) pc;
     Bit#(32) ppc;
     Bit#(32) inst;
+    KonataId k_id;
 } FetchToDecode deriving(Bits, FShow);
 
 typedef struct {
     Bit#(32) pc;
     Bit#(32) ppc;
     Bool epoch;
+    KonataId k_id;
 } IMemBussiness deriving(Bits, FShow);
 
 interface Fetch;
@@ -20,6 +23,7 @@ interface Fetch;
     method ActionValue#(FetchToDecode) getInst;
     method ActionValue#(CacheReq) sendReq();
     method Action getResp(Word resp);
+    method Action setFile(File file);
 endinterface
 
 module mkFetch(Fetch);
@@ -33,15 +37,21 @@ module mkFetch(Fetch);
     Reg#(Bit#(32)) pcReg <- mkReg(0);
     Reg#(Bool) epochReg <- mkReg(False);
 
+    let lfh <- mkReg(InvalidFile);
+	Reg#(KonataId) fresh_id <- mkReg(0);
+    Reg#(Bool) starting <- mkReg(True);
+
     // RULES //
-    rule rlJump (jumpFIFO.notEmpty);
+    rule rlJump (!starting && jumpFIFO.notEmpty);
         let addr = jumpFIFO.first;
         jumpFIFO.deq;
         pcReg <= addr;
         epochReg <= !epochReg;
     endrule
 
-    rule rlAddressGeneration (!jumpFIFO.notEmpty);
+    rule rlAddressGeneration (!starting && !jumpFIFO.notEmpty);
+        let iid <- fetch1Konata(lfh, fresh_id, 0);
+
         reqFIFO.enq(CacheReq{
             word_byte: 0,
             addr: pcReg,
@@ -52,13 +62,15 @@ module mkFetch(Fetch);
         inflightFIFO.enq(IMemBussiness{
             pc: pcReg,
             ppc: ppc,
-            epoch: epochReg
+            epoch: epochReg,
+            k_id: iid
         });
 
+        labelKonataLeft(lfh, iid, $format("(e%d) 0x%x: ", epochReg, pcReg));
         pcReg <= ppc;
     endrule
 
-    rule rlGetResp (!jumpFIFO.notEmpty);
+    rule rlGetResp (!starting && !jumpFIFO.notEmpty);
         let resp = respFIFO.first;
         respFIFO.deq;
         let info = inflightFIFO.first;
@@ -68,7 +80,8 @@ module mkFetch(Fetch);
             outputFIFO.enq(FetchToDecode{
                 pc: info.pc,
                 ppc: info.ppc,
-                inst: resp
+                inst: resp,
+                k_id: info.k_id
             });
         end
     endrule
@@ -92,6 +105,11 @@ module mkFetch(Fetch);
 
     method Action getResp(Word resp);
         respFIFO.enq(resp);
+    endmethod
+
+    method Action setFile(File file) if(starting);
+        lfh <= file;
+        starting <= False;
     endmethod
 endmodule
 

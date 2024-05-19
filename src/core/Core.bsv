@@ -6,6 +6,8 @@ import Frontend::*;
 import Backend::*;
 import MemTypes::*;
 import ReorderBuffer::*;
+import PEUtil::*;
+import KonataHelper::*;
 
 interface Core#(numeric type nPhysicalRegs, numeric type nRobElements, numeric type nRSEntries, numeric type nInflightDmem);
     method ActionValue#(CacheReq) imemSendReq();
@@ -29,21 +31,45 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
     Vector#(32, Reg#(tPhysicalReg)) registerMap <- replicateM(mkReg(Invalid));
     Reg#(Bit#(nPhysicalRegs)) freeList <- mkReg(~0);
     
+    // Konata
+	// Code to support Konata visualization
+    String dumpFile = "output.log" ;
+    let lfh <- mkReg(InvalidFile);
+	Reg#(KonataId) fresh_id <- mkReg(0);
+	Reg#(KonataId) commit_id <- mkReg(0);
+    
+	FIFO#(KonataId) retired <- mkFIFO;
+	FIFO#(KonataId) squashed <- mkFIFO;
+    Reg#(Bool) starting <- mkReg(True);
+	rule do_tic_logging;
+        if (starting) begin
+            let f <- $fopen(dumpFile, "w") ;
+            lfh <= f;
+            $fwrite(f, "Kanata\t0004\nC=\t1\n");
+            starting <= False;
+            frontend.setFile(lfh);
+            backend.setFile(lfh);
+        end
+		konataTic(lfh);
+	endrule
+
     // Communication FIFOs //
     FIFOF#(ROBResult#(TLog#(nPhysicalRegs))) jumpFIFO <- mkFIFOF;
     
     // RULES //
-    rule rlConnect (!jumpFIFO.notEmpty);
+    rule rlConnect (!starting && !jumpFIFO.notEmpty);
         let inst <- frontend.get();
         backend.put(inst);
     endrule
 
-    rule rlComplete (!jumpFIFO.notEmpty);
+    rule rlComplete (!starting && !jumpFIFO.notEmpty);
         let res <- backend.get();
         frontend.complete(res);
+        stageKonata(lfh, res.k_id, "Cm");
+        retired.enq(res.k_id);
     endrule
 
-    rule rlCommit (!jumpFIFO.notEmpty);
+    rule rlCommit (!starting && !jumpFIFO.notEmpty);
         let val <- frontend.drain();
 
         // Handle store
@@ -63,7 +89,7 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
         jumpFIFO.enq(val);
     endrule
 
-    rule rlRewind (jumpFIFO.notEmpty);
+    rule rlRewind (!starting && jumpFIFO.notEmpty);
         let val = jumpFIFO.first;
         jumpFIFO.deq;
 
@@ -79,6 +105,18 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
         end
     endrule
 
+    // Administration //
+    rule administrative_konata_commit;
+        retired.deq();
+        let f = retired.first();
+        commitKonata(lfh, f, commit_id);
+    endrule
+    
+    rule administrative_konata_flush;
+        squashed.deq();
+        let f = squashed.first();
+        squashKonata(lfh, f);
+    endrule
 
     // METHODS //
     method ActionValue#(CacheReq) imemSendReq();

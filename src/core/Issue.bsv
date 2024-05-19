@@ -7,6 +7,7 @@ import Fetch::*;
 import ReservationStation::*;
 import ReorderBuffer::*;
 import RegRename::*;
+import KonataHelper::*;
 
 interface Issue#(numeric type physicalRegCount, numeric type nRobElements);
     method Action put(FetchToDecode f2d);
@@ -15,6 +16,8 @@ interface Issue#(numeric type physicalRegCount, numeric type nRobElements);
     method ActionValue#(ROBResult#(TLog#(physicalRegCount))) drain();
     method Action graduate (Maybe#(Bit#(TLog#(physicalRegCount))) old_src);
     method Action flush(Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
+
+    method Action setFile(File file);
 endinterface
 
 module mkIssue(Issue#(physicalRegCount, nRobElements))
@@ -22,19 +25,26 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         NumAlias#(physicalRegSize, TLog#(physicalRegCount)),
         NumAlias#(robTagSize, TLog#(nRobElements))
     );
+
     // Internal Modules //
     PulseWire flushing <- mkPulseWire;
     RegRenameIfc#(32, physicalRegCount) regRename <- mkRegRename;
     ROB#(nRobElements, physicalRegSize) rob <- mkReorderBuffer;
+
+    let lfh <- mkReg(InvalidFile);
+	Reg#(KonataId) fresh_id <- mkReg(0);
+    Reg#(Bool) starting <- mkReg(True);
 
     // Communication FIFOs //
     FIFO#(FetchToDecode) inputFIFO <- mkBypassFIFO;
     FIFO#(RSEntry#(physicalRegSize, robTagSize)) outputFIFO <- mkBypassFIFO;
 
     // RULES //
-    rule rlIssue (!flushing);
+    rule rlIssue (!starting && !flushing);
         let f2d = inputFIFO.first;
         inputFIFO.deq();
+
+        stageKonata(lfh, f2d.k_id, "Is");
 
         let dInst = decodeInst(f2d.inst);
         let isStore = getInstFields(f2d.inst).opcode == op_STORE;
@@ -62,7 +72,8 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
                 tag: tag,
                 result: ?,
                 rd: Invalid,
-                jump_pc: Invalid
+                jump_pc: Invalid,
+                k_id: f2d.k_id
             });
         end
 
@@ -79,11 +90,12 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
             ready_rs2: ?,
             rs1: prs1,
             rs2: prs2,
-            rd: prd
+            rd: prd,
+            k_id: f2d.k_id
         });
     endrule
 
-    rule rlFlush (flushing);
+    rule rlFlush (!starting && flushing);
         inputFIFO.clear();
         outputFIFO.clear();
         rob.flush();
@@ -105,6 +117,11 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
     method Action flush(Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
         flushing.send();
         regRename.rewind(oldState, oldFree);
+    endmethod
+
+    method Action setFile(File file) if(starting);
+        lfh <= file;
+        starting <= False;
     endmethod
 endmodule
 

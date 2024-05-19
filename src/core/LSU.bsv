@@ -68,7 +68,8 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
             rd: in.rd,
             funct3: funct3,
             isStore: !isLoad,
-            offset: offset
+            offset: offset,
+            k_id: in.k_id
         });
     endrule
 
@@ -96,7 +97,8 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
                 tag: req.tag,
                 rd: req.rd,
                 result: result,
-                jump_pc: Invalid
+                jump_pc: Invalid,
+                k_id: req.k_id
             });
         end
     endrule
