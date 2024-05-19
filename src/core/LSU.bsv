@@ -19,8 +19,8 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
     FIFO#(PEResult#(physicalRegSize, robTagSize)) outputFIFO <- mkBypassFIFO;
     FIFO#(Bool) sendStoreFIFO <- mkBypassFIFO;
     
-    Ehr#(2, Bit#(TLog#(nInflight))) inflightCounter <- mkEhr(0);
-    Ehr#(2, Bit#(TLog#(nInflight))) poisonCounter <- mkEhr(0);
+    Ehr#(2, Bit#(TLog#(TAdd#(nInflight, 1)))) inflightCounter <- mkEhr(0);
+    Ehr#(2, Bit#(TLog#(TAdd#(nInflight, 1)))) poisonCounter <- mkEhr(0);
     FIFO#(MemBussiness#(physicalRegSize, robTagSize)) inflightFIFO <- mkSizedFIFO(valueOf(nInflight));
 
     FIFO#(CacheReq) cacheReqFIFO <- mkBypassFIFO;
@@ -29,7 +29,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
     PulseWire flushing <- mkPulseWire;
     
     // RULES //
-    rule addressGenerate (!flushing && (inflightCounter[0] < fromInteger(valueOf(nInflight) - 1)));
+    rule addressGenerate (!flushing);
         let in = inputFIFO.first;
         inputFIFO.deq;
         inflightCounter[0] <= inflightCounter[0] + 1;

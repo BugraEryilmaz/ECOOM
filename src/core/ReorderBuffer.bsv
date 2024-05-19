@@ -13,7 +13,6 @@ typedef struct {
 } ROBReservation#(numeric type physicalRegSize) deriving (Bits, FShow);
 
 typedef struct {
-    Bit#(32) result;
     Maybe#(Bit#(32)) jump_pc;
     Maybe#(Bit#(physicalRegSize)) phys_rd;
 } ROBEntry#(numeric type physicalRegSize) deriving (Bits, FShow);
@@ -43,6 +42,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     PulseWire flushing <- mkPulseWire;
 
     // Communication FIFOs //
+    FIFO#(PEResult#(physicalRegSize, TLog#(nEntries))) inputFIFO <- mkBypassFIFO;
     FIFO#(ROBResult#(physicalRegSize)) completion <- mkBypassFIFO;
     FIFO#(Bit#(TLog#(nEntries))) tagFIFO <- mkFIFO;
 
@@ -64,6 +64,16 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
         end
     endrule
 
+    rule rlComplete (!flushing);
+        let result = inputFIFO.first;
+        inputFIFO.deq;
+
+        cb.complete.put(tuple2(result.tag, ROBEntry{
+            phys_rd: result.rd,
+            jump_pc: result.jump_pc
+        }));
+    endrule
+
     // METHODS //
     method ActionValue#(Bit#(TLog#(nEntries))) reserve(ROBReservation#(physicalRegSize) element) if(!flushing);
         let tag <- cb.reserve.get();
@@ -73,11 +83,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     endmethod
 
     method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result) if (!flushing);
-        cb.complete.put(tuple2(result.tag, ROBEntry{
-            result: result.result,
-            phys_rd: result.rd,
-            jump_pc: result.jump_pc
-        }));
+        inputFIFO.enq(result);
     endmethod
 
     method ActionValue#(ROBResult#(physicalRegSize)) drain() if (!flushing);

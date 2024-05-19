@@ -77,7 +77,6 @@ module mkBAL(PE#(physicalRegSize, robTagSize));
     endmethod
 endmodule
 
-(* synthesize *)
 module mkBALSized(PE#(6, 6));
     PE#(6, 6) pe <- mkBAL;
     return pe;
