@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
@@ -47,6 +48,7 @@ module mkFetch(Fetch);
         jumpFIFO.deq;
         pcReg <= addr;
         epochReg <= !epochReg;
+        `LOG(("[IF] Jump to ", fshow(addr)));
     endrule
 
     rule rlAddressGeneration (!starting && !jumpFIFO.notEmpty);
@@ -67,6 +69,7 @@ module mkFetch(Fetch);
         });
 
         labelKonataLeft(lfh, iid, $format("(e%d) 0x%x: ", epochReg, pcReg));
+        `LOG(("[IF] Fetching 0x%x", pcReg));
         pcReg <= ppc;
     endrule
 
@@ -75,6 +78,8 @@ module mkFetch(Fetch);
         respFIFO.deq;
         let info = inflightFIFO.first;
         inflightFIFO.deq;
+
+        `LOG(("[IF] Received ", fshow(resp)));
 
         if(info.epoch == epochReg) begin
             outputFIFO.enq(FetchToDecode{

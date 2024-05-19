@@ -1,4 +1,3 @@
-
 typedef Bit#(48) KonataId; 
 typedef Bit#(8) ThreadId;
 

@@ -7,3 +7,4 @@ info/
 *.bo
 *.ba
 **/.DS_Store
+*.log

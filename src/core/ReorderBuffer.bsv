@@ -5,6 +5,7 @@ import Vector::*;
 import GetPut::*;
 import Ehr::*;
 import PEUtil::*;
+import KonataHelper::*;
 
 typedef struct {
     Bool isStore;
@@ -15,6 +16,7 @@ typedef struct {
 typedef struct {
     Maybe#(Bit#(32)) jump_pc;
     Maybe#(Bit#(physicalRegSize)) phys_rd;
+    KonataId k_id;
 } ROBEntry#(numeric type physicalRegSize) deriving (Bits, FShow);
 
 typedef struct {
@@ -70,7 +72,8 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
 
         cb.complete.put(tuple2(result.tag, ROBEntry{
             phys_rd: result.rd,
-            jump_pc: result.jump_pc
+            jump_pc: result.jump_pc,
+            k_id: result.k_id
         }));
     endrule
 

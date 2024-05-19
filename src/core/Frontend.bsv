@@ -95,6 +95,9 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     // ROB Interface    
     method Action complete(PEResult#(TLog#(nPhysicalRegs), TLog#(nRobElements)) result) if(!flushing);
         issue.complete(result);
+        if(result.rd matches tagged Valid .rd) begin
+            dispatch.makeReady(rd);
+        end
     endmethod
     
     method ActionValue#(ROBResult#(TLog#(nPhysicalRegs))) drain() if(!flushing);

@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
@@ -49,6 +50,7 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
             lfh <= f;
             $fwrite(f, "Kanata\t0004\nC=\t1\n");
             starting <= False;
+            `LOG(("Starting\n"));
             frontend.setFile(lfh);
             backend.setFile(lfh);
         end
@@ -67,8 +69,7 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
     rule rlComplete (!starting && !jumpFIFO.notEmpty);
         let res <- backend.get();
         frontend.complete(res);
-        stageKonata(lfh, res.k_id, "Cm");
-        retired.enq(res.k_id);
+        `LOG(("[ROB] Received from backend ", fshow(res)));
     endrule
 
     rule rlCommit (!starting && !jumpFIFO.notEmpty);
@@ -89,6 +90,10 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
 
         // Handle jumping
         jumpFIFO.enq(val);
+        
+        `LOG(("[CS] Committing ", fshow(val)));
+        stageKonata(lfh, val.completion.k_id, "Cm");
+        retired.enq(val.completion.k_id);
     endrule
 
     rule rlRewind (!starting && jumpFIFO.notEmpty);

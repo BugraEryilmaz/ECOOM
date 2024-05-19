@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import FIFO::*;
 import SpecialFIFOs::*;
 import Vector::*;
@@ -45,6 +46,7 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         inputFIFO.deq();
 
         stageKonata(lfh, f2d.k_id, "Is");
+        `LOG(("[Is] From IF ", fshow(f2d)));
 
         let dInst = decodeInst(f2d.inst);
         let isStore = getInstFields(f2d.inst).opcode == op_STORE;
@@ -81,7 +83,7 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         if(isControlInst(dInst)) pe = BAL;
         else if(isMemoryInst(dInst)) pe = LSU;
 
-        outputFIFO.enq(RSEntry{
+        let entry = RSEntry{
             pe: pe,
             tag: tag,
             pc: f2d.pc,
@@ -92,7 +94,9 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
             rs2: prs2,
             rd: prd,
             k_id: f2d.k_id
-        });
+        };
+        outputFIFO.enq(entry);
+        `LOG(("[Is] RS entry ", fshow(entry)));
     endrule
 
     rule rlFlush (!starting && flushing);

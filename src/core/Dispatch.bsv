@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
@@ -58,16 +59,20 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
 
         if(entry.pe == LSU) rsLSU.put(entry);
         else rsInteger.put(entry);
+
+        `LOG(("[Ds] Enter to RS ", fshow(entry)));
     endrule
 
     rule rlIntDispatch (!starting && !flushing && aluIssue.notFull);
         let val <- rsInteger.issue;
         aluIssue.enq(val);
+        `LOG(("[Ds] Sent to IALU ", fshow(val)));
     endrule
 
     rule rlLsuDispatch (!starting && !flushing && lsuIssue.notFull);
         let val <- rsLSU.issue;
         lsuIssue.enq(val);
+        `LOG(("[Ds] Sent to LSU ", fshow(val)));
     endrule
 
     rule rlDispatch (!starting && !flushing && (aluIssue.notEmpty || lsuIssue.notEmpty));
@@ -81,8 +86,9 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         end
 
         getFIFO.enq(val);
-
+        
         stageKonata(lfh, val.k_id, "Ds");
+        `LOG(("[Ds] Sent to Backend ", fshow(val)));
     endrule
 
     rule rlFlush (!starting && flushing);
