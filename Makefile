@@ -22,7 +22,7 @@ verilog:
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(INFO_DIR)
-	bsc $(BSC_FLAGS) -remove-dollar  $(BINARY_NAME) -verilog -g mk$(BINARY_NAME)Sized -u ./src/core/$(BINARY_NAME).bsv
+	bsc -remove-dollar $(BSC_FLAGS)  $(BINARY_NAME) -verilog -g mk$(BINARY_NAME)Sized -u ./src/core/$(BINARY_NAME).bsv
 
 test:
 	mkdir -p $(BUILD_DIR)
