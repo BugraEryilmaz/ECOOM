@@ -6,6 +6,7 @@ import RVUtil::*;
 import PEUtil::*;
 import Fetch::*;
 import ReservationStation::*;
+import ReservationStationOrdered::*;
 import ReorderBuffer::*;
 import RegRename::*;
 import RDYB::*;
@@ -26,7 +27,7 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     // Internal Modules //
     PulseWire flushing <- mkPulseWire;
     RS#(nRSEntries, physicalRegSize, robTagSize) rsInteger <- mkReservationStation;
-    RS#(nRSEntries, physicalRegSize, robTagSize) rsLSU <- mkReservationStation;
+    RS#(nRSEntries, physicalRegSize, robTagSize) rsLSU <- mkReservationStationOrdered;
     RDYBIfc#(physicalRegSize) rdby <- mkRDYB;
 
     // Communication FIFOs //
