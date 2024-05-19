@@ -32,7 +32,7 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
     RWire#(Vector#(nEntries, Maybe#(element))) entriesWire <- mkRWire;
     FIFO#(element) putQueue <- mkBypassFIFO;
     FIFO#(Bit#(physicalRegSize)) readyQueue <- mkBypassFIFO;
-    FIFO#(RSEntry#(physicalRegSize, robTagSize)) issueQueue <- mkBypassFIFO;
+    FIFO#(RSEntry#(physicalRegSize, robTagSize)) issueQueue <- mkFIFO;
     PulseWire flushing <- mkPulseWire;
 
     // HELPERS //
