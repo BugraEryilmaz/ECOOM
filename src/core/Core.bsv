@@ -67,10 +67,13 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
         let val = jumpFIFO.first;
         jumpFIFO.deq;
 
+        Vector::Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) readRegMap = ?;
+        for(Integer i = 0; i < 32; i = i + 1) readRegMap[i] = registerMap[i];
+
         if(val.completion.jump_pc matches tagged Valid .jump_pc) begin
             frontend.jumpAndRewind(
                 jump_pc,
-                registerMap,
+                readRegMap,
                 freeList
             );
         end
