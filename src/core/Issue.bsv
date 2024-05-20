@@ -69,16 +69,6 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
             grad_rd: old_prd
         });
 
-        if (isStore) begin
-            rob.complete(PEResult{
-                tag: tag,
-                result: ?,
-                rd: Invalid,
-                jump_pc: Invalid,
-                k_id: f2d.k_id
-            });
-        end
-
         PEType pe = IALU;
         if(isControlInst(dInst)) pe = BAL;
         else if(isMemoryInst(dInst)) pe = LSU;

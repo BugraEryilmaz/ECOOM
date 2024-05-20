@@ -36,11 +36,14 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
         Alias#(ROBReservation#(physicalRegSize), robReservation)
     );
 
+    // TODO Rewrite the reorder buffer :(
+    
     // Data Structures
-    CompletionBuffer#(nEntries, ROBEntry#(physicalRegSize)) cb <- mkCompletionBuffer;
+    Vector#(nEntries, Ehr#(3, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))) cb <- replicateM(mkEhr(Invalid));
+    RWire#(Vector#(nEntries, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))) readCb <- mkRWire;
     FIFO#(robReservation) rs <- mkSizedFIFO(valueOf(nEntries));
-    Ehr#(2, Bit#(TLog#(TAdd#(nEntries, 1)))) inflightCounter <- mkEhr(0);
-    Reg#(Bit#(TLog#(TAdd#(nEntries, 1)))) posionCounter <- mkReg(0);
+    Reg#(Bit#(TLog#(nEntries))) regHead <- mkReg(0);
+    Reg#(Bit#(TLog#(nEntries))) regTail <- mkReg(0);
     PulseWire flushing <- mkPulseWire;
 
     // Communication FIFOs //
@@ -50,38 +53,66 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
 
     // RULES //
 
-    rule rlDrain (!flushing);
-        let fromCB <- cb.drain.get;
-        let fromRS = rs.first;
-        rs.deq;
-        inflightCounter[1] <= inflightCounter[1] - 1;
-        if(posionCounter == 0) begin
-            completion.enq(ROBResult{
-                reservation: fromRS,
-                completion: fromCB
-            });
+    rule rlReadCB(!flushing);
+        Vector#(nEntries, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))  entriesSignal = ?;
+        for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
+            entriesSignal[i] = cb[i][0];
         end
-        else begin
-            posionCounter <= posionCounter - 1;
+        readCb.wset(entriesSignal);
+    endrule
+
+    rule rlDrain (!flushing && isValid(readCb.wget));
+        if(fromMaybe(?, readCb.wget)[regHead] matches tagged Valid .validEntry) begin
+            let fromRS = rs.first;
+            if (validEntry matches tagged Valid .fromCB) begin
+                rs.deq;
+                completion.enq(ROBResult{
+                    reservation: fromRS,
+                    completion: fromCB
+                });
+                cb[regHead][0] <= tagged Invalid;
+                regHead <= regHead + 1;
+            end
+            else if(fromRS.isStore) begin
+                rs.deq;
+                completion.enq(ROBResult{
+                    reservation: fromRS,
+                    completion: ROBEntry {
+                        jump_pc: Invalid,
+                        phys_rd: Invalid,
+                        k_id: ?
+                    }
+                });
+                cb[regHead][0] <= tagged Invalid;
+                regHead <= regHead + 1;
+            end
         end
     endrule
 
-    rule rlComplete (!flushing);
+    rule rlComplete (!flushing && isValid(readCb.wget));
         let result = inputFIFO.first;
         inputFIFO.deq;
 
-        cb.complete.put(tuple2(result.tag, ROBEntry{
+        cb[result.tag][1] <= tagged Valid (tagged Valid ( ROBEntry {
             phys_rd: result.rd,
             jump_pc: result.jump_pc,
             k_id: result.k_id
         }));
     endrule
 
+    rule rlReserve (!flushing && isValid(readCb.wget));
+        if (fromMaybe(?, readCb.wget)[regTail] matches tagged Invalid) begin
+            tagFIFO.enq(regTail);
+            cb[regTail][2] <= tagged Valid (tagged Invalid);
+            regTail <= regTail + 1;
+        end
+    endrule
+
     // METHODS //
     method ActionValue#(Bit#(TLog#(nEntries))) reserve(ROBReservation#(physicalRegSize) element) if(!flushing);
-        let tag <- cb.reserve.get();
+        let tag = tagFIFO.first;
+        tagFIFO.deq;
         rs.enq(element);
-        inflightCounter[0] <= inflightCounter[0] + 1;
         return tag;
     endmethod
 
@@ -97,7 +128,8 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     
     method Action flush();
         flushing.send();    
-        posionCounter <= inflightCounter[0];
+        regHead <= 0;
+        regTail <= 0;
     endmethod
 endmodule
 

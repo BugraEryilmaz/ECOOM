@@ -10,7 +10,7 @@ interface RDYBIfc#(numeric type idx_bits);
 endinterface
 
 module mkRDYB(RDYBIfc#(idx_bits));
-    Vector#(TExp#(idx_bits), Reg#(Bit#(1))) rf <- replicateM(mkReg(0));
+    Vector#(TExp#(idx_bits), Reg#(Bit#(1))) rf <- replicateM(mkReg(1));
     RWire#(Bit#(idx_bits)) setIdx <- (mkRWire); // coming from the common databus
     RWire#(Bit#(idx_bits)) resetIdx <- (mkRWire); // coming from rename
     PulseWire flushWire <- (mkPulseWire); // coming from commit
