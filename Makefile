@@ -6,7 +6,6 @@ INFO_DIR=info
 INCLUDE_DIR=src/cache:src/core:src/utils:test
 BINARY_NAME=top_pipelined
 BSC_FLAGS=--aggressive-conditions +RTS -K32M -RTS --show-schedule -sched-dot -p +:$(INCLUDE_DIR) -vdir $(BUILD_DIR) -simdir $(BUILD_DIR)  -bdir $(OBJ_DIR) -info-dir $(INFO_DIR) -o 
-BSC_FLAGS_TEST=--aggressive-conditions --show-schedule -sched-dot -p +:$(INCLUDE_DIR) -vdir $(BUILD_DIR) -simdir $(BUILD_DIR)  -bdir $(OBJ_DIR) -info-dir $(INFO_DIR) -o 
 
 .PHONY: clean all verilog test $(BINARY_NAME)
 
@@ -29,8 +28,8 @@ test:
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(INFO_DIR)
 	mkdir -p $(SIM_DIR)
-	bsc $(BSC_FLAGS_TEST) sim/$(BINARY_NAME) -sim -g mk$(BINARY_NAME)TB -u ./test/$(BINARY_NAME)TB.bsv
-	bsc $(BSC_FLAGS_TEST) sim/$(BINARY_NAME) -sim -e mk$(BINARY_NAME)TB
+	bsc $(BSC_FLAGS) sim/$(BINARY_NAME) -sim -g mk$(BINARY_NAME)TB -u ./src/test/$(BINARY_NAME)TB.bsv
+	bsc $(BSC_FLAGS) sim/$(BINARY_NAME) -sim -e mk$(BINARY_NAME)TB
 
 clean:
 	rm -rf info

@@ -30,7 +30,7 @@ module mkBAL(PE#(physicalRegSize, robTagSize));
         if (isJAL) begin
             result = tagged Valid (pc + imm);
         end else if (isJALR) begin
-            result = tagged Valid ((pc + imm) & ~1); // zero out LSB
+            result = tagged Valid ((in.src1 + imm) & ~1); // zero out LSB
         end else begin
             // Branch
             let taken = case (funct3)
