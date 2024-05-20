@@ -30,7 +30,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
     PulseWire flushing <- mkPulseWire;
     
     // RULES //
-    rule addressGenerate (!flushing);
+    rule addressGenerate;
         let in = inputFIFO.first;
         inputFIFO.deq;
         inflightCounter[0] <= inflightCounter[0] + 1;
@@ -78,7 +78,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
         inflightFIFO.enq(op);
     endrule
 
-    rule waitRequest (!flushing);
+    rule waitRequest;
         let resp = cacheRespFIFO.first;
         cacheRespFIFO.deq;
         let req = inflightFIFO.first;
@@ -133,7 +133,8 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
         endmethod
     endinterface;
     
-    method Action sendStore() if (!flushing);
+    method Action sendStore();
+        `LOG(("[LSU] Storing"));
         sendStoreFIFO.enq(True);
     endmethod
     

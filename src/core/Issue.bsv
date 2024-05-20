@@ -65,7 +65,8 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         let reservation = ROBReservation{
             isStore: isStore,
             arch_rd: dInst.valid_rd ? tagged Valid rd : tagged Invalid,
-            grad_rd: old_prd
+            grad_rd: old_prd,
+            pc: f2d.pc
         };
 
         let tag <- rob.reserve(reservation);
@@ -109,7 +110,7 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
 
     method Action complete(PEResult#(physicalRegSize, robTagSize) result) if (!flushing) = rob.complete(result);
     method ActionValue#(ROBResult#(physicalRegSize)) drain() if (!flushing) = rob.drain();
-    method Action graduate (Maybe#(Bit#(TLog#(physicalRegCount))) old_src) if (!flushing) = regRename.graduate(old_src);
+    method Action graduate (Maybe#(Bit#(TLog#(physicalRegCount))) old_src) = regRename.graduate(old_src);
 
     method Action flush(Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
         flushing.send();

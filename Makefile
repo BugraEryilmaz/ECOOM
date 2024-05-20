@@ -34,6 +34,5 @@ test:
 clean:
 	rm -rf info
 	rm -rf obj
-	rm -f *.log
 
 all: clean $(BINARY_NAME)

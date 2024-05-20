@@ -12,6 +12,7 @@ typedef struct {
     Bool isStore;
     Maybe#(Bit#(5)) arch_rd;
     Maybe#(Bit#(physicalRegSize)) grad_rd;
+    Bit#(32) pc;
 } ROBReservation#(numeric type physicalRegSize) deriving (Bits, FShow);
 
 typedef struct {
@@ -50,11 +51,11 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     // Communication FIFOs //
     FIFO#(PEResult#(physicalRegSize, TLog#(nEntries))) inputFIFO <- mkBypassFIFO;
     FIFO#(ROBResult#(physicalRegSize)) completion <- mkBypassFIFO;
-    FIFO#(Bit#(TLog#(nEntries))) tagFIFO <- mkFIFO;
+    FIFO#(Bit#(TLog#(nEntries))) tagFIFO <- mkBypassFIFO;
 
     // RULES //
 
-    rule rlReadCB(!flushing);
+    rule rlReadCB;
         Vector#(nEntries, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))  entriesSignal = ?;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
             entriesSignal[i] = cb[i][0];
@@ -129,9 +130,16 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     endmethod
     
     method Action flush();
-        flushing.send();    
+        flushing.send();   
+        inputFIFO.clear();
+        completion.clear();
+        tagFIFO.clear();
+        rs.clear();
         regHead <= 0;
         regTail <= 0;
+        for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
+            cb[i][0] <= tagged Invalid;
+        end
     endmethod
 endmodule
 

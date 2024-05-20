@@ -105,7 +105,7 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
         return val;
     endmethod
 
-    method Action graduate (Maybe#(Bit#(TLog#(nPhysicalRegs))) old_src) if(!flushing);
+    method Action graduate (Maybe#(Bit#(TLog#(nPhysicalRegs))) old_src);
         issue.graduate(old_src);
     endmethod
 

@@ -1,6 +1,5 @@
 `include "Logging.bsv"
 import FIFO::*;
-import FIFOF::*;
 import SpecialFIFOs::*;
 import Vector::*;
 import Frontend::*;
@@ -8,6 +7,7 @@ import Backend::*;
 import MemTypes::*;
 import ReorderBuffer::*;
 import PEUtil::*;
+import Ehr::*;
 import KonataHelper::*;
 
 typedef struct { Bit#(4) byte_en; Bit#(32) addr; Bit#(32) data; } Mem deriving (Eq, FShow, Bits);
@@ -58,58 +58,68 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
 	endrule
 
     // Communication FIFOs //
-    FIFOF#(ROBResult#(TLog#(nPhysicalRegs))) jumpFIFO <- mkFIFOF;
+    FIFO#(ROBResult#(physicalRegSize)) commitQueue <- mkFIFO;
     
     // RULES //
-    rule rlConnect (!starting && !jumpFIFO.notEmpty);
+    rule rlConnect (!starting);
         let inst <- frontend.get();
         backend.put(inst);
     endrule
 
-    rule rlComplete (!starting && !jumpFIFO.notEmpty);
+    rule rlComplete (!starting);
         let res <- backend.get();
         frontend.complete(res);
         `LOG(("[ROB] Received from backend ", fshow(res)));
     endrule
 
-    rule rlCommit (!starting && !jumpFIFO.notEmpty);
+    rule rlDrain (!starting);
         let val <- frontend.drain();
+        commitQueue.enq(val);
+    endrule
+
+    rule rlCommit (!starting);
+        let val = commitQueue.first;
+        commitQueue.deq();
 
         // Handle store
         if(val.reservation.isStore) begin
             backend.sendStore();
+        end else begin
+            // Handle register renaming and free list
+            Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) nextRegMap = ?;
+            for(Integer i = 0; i < 32; i = i + 1) nextRegMap[i] = registerMap[i];
+            Bit#(nPhysicalRegs) nextFreeList = freeList;
+            if(val.reservation.arch_rd matches tagged Valid .rd) begin
+                nextRegMap[rd] = val.completion.phys_rd;
+
+                for(Integer i = 0; i < valueOf(nPhysicalRegs); i = i + 1) begin
+                    if (val.reservation.grad_rd matches tagged Valid .grad_rd &&& grad_rd == fromInteger(i)) begin
+                        nextFreeList[i] = 1;
+                    end else if (val.completion.phys_rd matches tagged Valid .phys_rd &&& phys_rd == fromInteger(i)) begin
+                        nextFreeList[i] = 0;
+                    end
+                end
+            end
+            for(Integer i = 0; i < 32; i = i + 1) registerMap[i] <= nextRegMap[i];
+            freeList <= nextFreeList;
+
+            // Handle register graduation
+            frontend.graduate(val.reservation.grad_rd);
+
+            // Handle jumping
+            if(val.completion.jump_pc matches tagged Valid .jump_pc) begin
+                frontend.jumpAndRewind(
+                    jump_pc,
+                    nextRegMap,
+                    nextFreeList
+                );
+                backend.flush();
+            end
         end
-
-        // Handle register renaming
-        if(val.reservation.arch_rd matches tagged Valid .rd) begin
-            registerMap[rd] <= val.completion.phys_rd;
-        end
-
-        // Handle register graduation
-        frontend.graduate(val.reservation.grad_rd);
-
-        // Handle jumping
-        jumpFIFO.enq(val);
         
         `LOG(("[CS] Committing ", fshow(val)));
         stageKonata(lfh, val.completion.k_id, "Cm");
         retired.enq(val.completion.k_id);
-    endrule
-
-    rule rlRewind (!starting && jumpFIFO.notEmpty);
-        let val = jumpFIFO.first;
-        jumpFIFO.deq;
-
-        Vector::Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) readRegMap = ?;
-        for(Integer i = 0; i < 32; i = i + 1) readRegMap[i] = registerMap[i];
-
-        if(val.completion.jump_pc matches tagged Valid .jump_pc) begin
-            frontend.jumpAndRewind(
-                jump_pc,
-                readRegMap,
-                freeList
-            );
-        end
     endrule
 
     // Administration //

@@ -100,7 +100,7 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
         cdb.flush();
     endmethod
 
-    method Action sendStore() if (!flushing) = lsu.sendStore;
+    method Action sendStore() = lsu.sendStore;
     method ActionValue#(CacheReq) sendReq() = lsu.sendReq;
     method Action getResp(Word resp) = lsu.getResp(resp);
 

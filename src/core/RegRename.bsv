@@ -4,7 +4,6 @@ import FIFOF::*;
 import SpecialFIFOs::*;
 
 interface RegRenameIfc#(numeric type archRegCount, numeric type physicalRegCount);
-
     method Maybe#(Bit#(TLog#(physicalRegCount))) map (Bit#(TLog#(archRegCount)) idx);
     method ActionValue#(Maybe#(Bit#(TLog#(physicalRegCount)))) allocate (Bit#(TLog#(archRegCount)) idx);
     method Action graduate (Maybe#(Bit#(TLog#(physicalRegCount))) old_src);
