@@ -5,7 +5,7 @@ OBJ_DIR=obj
 INFO_DIR=info
 INCLUDE_DIR=src/cache:src/core:src/utils:test
 BINARY_NAME=top_pipelined
-BSC_FLAGS=--aggressive-conditions --show-schedule -sched-dot -p +:$(INCLUDE_DIR) -vdir $(BUILD_DIR) -simdir $(BUILD_DIR)  -bdir $(OBJ_DIR) -info-dir $(INFO_DIR) -o 
+BSC_FLAGS=--aggressive-conditions +RTS -K32M -RTS --show-schedule -sched-dot -p +:$(INCLUDE_DIR) -vdir $(BUILD_DIR) -simdir $(BUILD_DIR)  -bdir $(OBJ_DIR) -info-dir $(INFO_DIR) -o 
 BSC_FLAGS_TEST=--aggressive-conditions --show-schedule -sched-dot -p +:$(INCLUDE_DIR) -vdir $(BUILD_DIR) -simdir $(BUILD_DIR)  -bdir $(OBJ_DIR) -info-dir $(INFO_DIR) -o 
 
 .PHONY: clean all verilog test $(BINARY_NAME)
