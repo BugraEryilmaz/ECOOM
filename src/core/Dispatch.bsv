@@ -10,7 +10,7 @@ import ReservationStation::*;
 import ReservationStationOrdered::*;
 import ReorderBuffer::*;
 import RegRename::*;
-import Ehr::*;
+import RDYB::*;
 import KonataHelper::*;
 
 interface Dispatch#(numeric type physicalRegSize, numeric type robTagSize, numeric type nRSEntries);
@@ -30,9 +30,9 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     
     // Internal Modules //
     PulseWire flushing <- mkPulseWire;
-    RS#(nRSEntries, physicalRegSize, robTagSize) rsInteger <- mkReservationStationOrdered;
+    RS#(nRSEntries, physicalRegSize, robTagSize) rsInteger <- mkReservationStation;
     RS#(nRSEntries, physicalRegSize, robTagSize) rsLSU <- mkReservationStationOrdered;
-    Vector#(TExp#(physicalRegSize), Ehr#(2, Bit#(1))) rdyb <- replicateM(mkEhr(1));
+    RDYBIfc#(physicalRegSize) rdby <- mkRDYB;
 
     let lfh <- mkReg(InvalidFile);
 	Reg#(KonataId) fresh_id <- mkReg(0);
@@ -49,12 +49,12 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         let entry = putFIFO.first;
         putFIFO.deq;
 
-        let ready_rs1 = 1; //rdyb[fromMaybe(?, entry.rs1)][1];
-        let ready_rs2 = 1; //rdyb[fromMaybe(?, entry.rs2)][1];
+        let ready_rs1 <- rdby.read(fromMaybe(?, entry.rs1));
+        let ready_rs2 <- rdby.read(fromMaybe(?, entry.rs2));
         entry.ready_rs1 = isValid(entry.rs1) ? (ready_rs1 == 1 ? True : False) : True;
         entry.ready_rs2 = isValid(entry.rs2) ? (ready_rs2 == 1 ? True : False) : True;
         if(entry.rd matches tagged Valid .rd) begin
-            rdyb[rd][1] <= 0;
+            rdby.rst(rd);
         end
 
         if(entry.pe == LSU) rsLSU.put(entry);
@@ -94,8 +94,7 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     rule rlFlush (!starting && flushing);
         rsInteger.flush();
         rsLSU.flush();
-        for(Integer i = 0; i < valueOf(TExp#(physicalRegSize)); i = i + 1)
-            rdyb[i][0] <= 1;
+        rdby.flush();
     endrule
 
     // METHODS //
@@ -112,7 +111,7 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     method Action makeReady(Bit#(physicalRegSize) rs) if(!flushing);
         rsInteger.makeReady(rs);
         rsLSU.makeReady(rs);
-        rdyb[rs][0] <= 1;
+        rdby.set(rs);
     endmethod
 
     method Action flush() = flushing.send();

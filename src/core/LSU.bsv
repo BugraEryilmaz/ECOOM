@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import FIFO::*;
 import SpecialFIFOs::*;
 import Ehr::*;
@@ -36,7 +37,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
 
         let addr = in.src1 + in.imm;
         let offset = addr[1: 0];
-        let isLoad = getInstFields(in.dInst.inst).opcode == op_STORE;
+        let isLoad = getInstFields(in.dInst.inst).opcode == op_LOAD;
         let funct3 = getInstFields(in.dInst.inst).funct3;
         if (isLoad) begin
             cacheReqFIFO.enq(CacheReq{
@@ -63,14 +64,18 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
             let data = in.src2 << shift_amount;
         end
 
-        inflightFIFO.enq(MemBussiness{
+        let op = MemBussiness{
             tag: in.tag,
             rd: in.rd,
             funct3: funct3,
             isStore: !isLoad,
             offset: offset,
             k_id: in.k_id
-        });
+        };
+
+        `LOG(("[LSU] Sending ", fshow(op)));
+
+        inflightFIFO.enq(op);
     endrule
 
     rule waitRequest (!flushing);
@@ -80,6 +85,8 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
         inflightFIFO.deq;
         inflightCounter[1] <= inflightCounter[1] - 1;
         
+        `LOG(("[LSU] Received ", fshow(resp)));
+
         if(poisonCounter[1] > 0) begin
             poisonCounter[1] <= poisonCounter[1] - 1;
         end

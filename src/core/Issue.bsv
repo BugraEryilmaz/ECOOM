@@ -46,7 +46,6 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         inputFIFO.deq();
 
         stageKonata(lfh, f2d.k_id, "Is");
-        `LOG(("[Is] From IF ", fshow(f2d)));
 
         let dInst = decodeInst(f2d.inst);
         let isStore = getInstFields(f2d.inst).opcode == op_STORE;
@@ -54,7 +53,7 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         // Read the current values of the registers
         let rs1 = getInstFields(f2d.inst).rs1;
         let rs2 = getInstFields(f2d.inst).rs2;
-        let rd = getInstFields(f2d.inst).rd;
+        let rd = dInst.valid_rd ? getInstFields(f2d.inst).rd : 0;
 
         let prs1 = dInst.valid_rs1 ? regRename.map(rs1) : tagged Invalid;
         let prs2 = dInst.valid_rs2 ? regRename.map(rs2) : tagged Invalid;
@@ -63,11 +62,15 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         // Allocate a register for the rd
         let prd <- regRename.allocate(rd);
 
-        let tag <- rob.reserve(ROBReservation{
+        let reservation = ROBReservation{
             isStore: isStore,
             arch_rd: dInst.valid_rd ? tagged Valid rd : tagged Invalid,
             grad_rd: old_prd
-        });
+        };
+
+        let tag <- rob.reserve(reservation);
+
+        `LOG(("[Is] From IF ", fshow(f2d), " reserving ", fshow(reservation)));
 
         PEType pe = IALU;
         if(isControlInst(dInst)) pe = BAL;

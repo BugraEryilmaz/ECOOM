@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import FIFO::*;
 import SpecialFIFOs::*;
 import CompletionBuffer::*;
@@ -64,6 +65,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     rule rlDrain (!flushing && isValid(readCb.wget));
         if(fromMaybe(?, readCb.wget)[regHead] matches tagged Valid .validEntry) begin
             let fromRS = rs.first;
+            `LOG(("[ROB] Waiting on ", fshow(fromRS)));
             if (validEntry matches tagged Valid .fromCB) begin
                 rs.deq;
                 completion.enq(ROBResult{

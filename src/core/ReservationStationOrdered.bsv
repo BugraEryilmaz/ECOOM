@@ -12,6 +12,7 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
         NumAlias#(entrySize, TLog#(nEntries))
     );
     Vector#(nEntries, Ehr#(3, Maybe#(element))) entries <- replicateM(mkEhr(Invalid));
+    RWire#(Vector#(nEntries, Maybe#(element))) entriesWire <- mkRWire;
     FIFO#(element) putQueue <- mkBypassFIFO;
     FIFO#(Bit#(physicalRegSize)) readyQueue <- mkBypassFIFO;
     FIFO#(RSEntry#(physicalRegSize, robTagSize)) issueQueue <- mkFIFO;
@@ -22,12 +23,21 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
     // HELPERS //
 
     // RULES //
-    rule wakeUpReg (!flushing);
+    rule updateEntries (!flushing);
+        Vector#(nEntries, Maybe#(element)) entriesSignal = ?;
+        for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
+            entriesSignal[i] = entries[i][0];
+        end
+        entriesWire.wset(entriesSignal);
+    endrule
+
+    rule wakeUpReg (!flushing && isValid(entriesWire.wget));
         let rs = readyQueue.first;
         readyQueue.deq;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
-            if(isValid(entries[i][0])) begin
-                let val = fromMaybe(?, entries[i][0]);
+            let x = fromMaybe(?, entriesWire.wget());
+            if(isValid(x[i])) begin
+                let val = fromMaybe(?, x[i]);
                 if(val.rs1 matches tagged Valid .rs1)
                     val.ready_rs1 = val.ready_rs1 || (rs1 == rs);
 
@@ -38,19 +48,20 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
         end
     endrule
 
-    rule putEntry (!flushing);
+    rule putEntry (!flushing && isValid(entriesWire.wget));
         Bit#(entrySize) idx = regHead;
-        if(!isValid(entries[idx][1])) begin
+        if(!isValid(fromMaybe(?, entriesWire.wget)[idx])) begin
             entries[idx][1] <= tagged Valid(putQueue.first);
             putQueue.deq;
             regHead <= regHead + 1;
         end
     endrule
 
-    rule prepareIssue (!flushing);
+    rule prepareIssue (!flushing && isValid(entriesWire.wget));
         Bit#(entrySize) idx = regTail;
-        if(isValid(entries[idx][2])) begin
-            issueQueue.enq(fromMaybe(?, entries[idx][2]));
+        let entry = fromMaybe(?, entriesWire.wget)[idx];
+        if(entry matches tagged Valid .e &&& (e.ready_rs1 && e.ready_rs2)) begin
+            issueQueue.enq(fromMaybe(?, entry));
             entries[idx][2] <= tagged Invalid;
             regTail <= regTail + 1;
         end
