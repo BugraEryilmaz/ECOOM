@@ -16,7 +16,7 @@ function Bool isMMIO(Bit#(32) addr);
     return x;
 endfunction
 
-module mktop_pipelinedTB(Empty);
+module mktop_pipelined(Empty);
     // Instantiate the dual ported memory
     BRAM_Configure cfg = defaultValue();
     cfg.loadFormat = tagged Hex "mem.vmh";
@@ -29,7 +29,7 @@ module mktop_pipelinedTB(Empty);
     FIFO#(Mem) dreq <- mkFIFO;
     FIFO#(Mem) mmioreq <- mkFIFO;
     FIFO#(Bool) fifoMMIO <- mkFIFO;
-    let debug = False;
+    let debug = True;
     Reg#(Bit#(32)) cycle_count <- mkReg(0);
 
     rule tic;
@@ -38,7 +38,7 @@ module mktop_pipelinedTB(Empty);
 
     rule requestI;
         let req <- rv_core.imemSendReq;
-        if (debug) $display("Get IReq", fshow(req));
+        // if (debug) $display("Get IReq", fshow(req));
         ireq.enq(req);
         cache.sendReqInstr(CacheReq{word_byte: req.byte_en, addr: req.addr, data: req.data});
     endrule
@@ -47,7 +47,7 @@ module mktop_pipelinedTB(Empty);
         let x <- cache.getRespInstr();
         let req = ireq.first();
         ireq.deq();
-        if (debug) $display("Get IResp ", fshow(req), fshow(x));
+        // if (debug) $display("Get IResp ", fshow(req), fshow(x));
         req.data = x;
         rv_core.imemGetResp(req);
     endrule
@@ -99,7 +99,7 @@ module mktop_pipelinedTB(Empty);
 
             let req = dreq.first();
             dreq.deq();
-            if (debug) $display("Get IResp ", fshow(req), fshow(x));
+            if (debug) $display("Get DResp ", fshow(req), fshow(x));
             req.data = x;
             rv_core.dmemGetResp(req);
         end else begin

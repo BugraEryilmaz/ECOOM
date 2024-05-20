@@ -50,47 +50,49 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         let dInst = decodeInst(f2d.inst);
         let isStore = getInstFields(f2d.inst).opcode == op_STORE;
         
-        // Read the current values of the registers
-        let rs1 = getInstFields(f2d.inst).rs1;
-        let rs2 = getInstFields(f2d.inst).rs2;
-        let rd = dInst.valid_rd ? getInstFields(f2d.inst).rd : 0;
+        if(dInst.legal) begin
+            // Read the current values of the registers
+            let rs1 = getInstFields(f2d.inst).rs1;
+            let rs2 = getInstFields(f2d.inst).rs2;
+            let rd = dInst.valid_rd ? getInstFields(f2d.inst).rd : 0;
 
-        let prs1 = dInst.valid_rs1 ? regRename.map(rs1) : tagged Invalid;
-        let prs2 = dInst.valid_rs2 ? regRename.map(rs2) : tagged Invalid;
-        let old_prd = dInst.valid_rd ? regRename.map(rd) : tagged Invalid;
+            let prs1 = dInst.valid_rs1 ? regRename.map(rs1) : tagged Invalid;
+            let prs2 = dInst.valid_rs2 ? regRename.map(rs2) : tagged Invalid;
+            let old_prd = dInst.valid_rd ? regRename.map(rd) : tagged Invalid;
 
-        // Allocate a register for the rd
-        let prd <- regRename.allocate(rd);
+            // Allocate a register for the rd
+            let prd <- regRename.allocate(rd);
 
-        let reservation = ROBReservation{
-            isStore: isStore,
-            arch_rd: dInst.valid_rd ? tagged Valid rd : tagged Invalid,
-            grad_rd: old_prd,
-            pc: f2d.pc
-        };
+            let reservation = ROBReservation{
+                isStore: isStore,
+                arch_rd: dInst.valid_rd ? tagged Valid rd : tagged Invalid,
+                grad_rd: old_prd,
+                pc: f2d.pc
+            };
 
-        let tag <- rob.reserve(reservation);
+            let tag <- rob.reserve(reservation);
 
-        `LOG(("[Is] From IF ", fshow(f2d), " reserving ", fshow(reservation)));
+            `LOG(("[Is] From IF ", fshow(f2d), " reserving ", fshow(reservation)));
 
-        PEType pe = IALU;
-        if(isControlInst(dInst)) pe = BAL;
-        else if(isMemoryInst(dInst)) pe = LSU;
+            PEType pe = IALU;
+            if(isControlInst(dInst)) pe = BAL;
+            else if(isMemoryInst(dInst)) pe = LSU;
 
-        let entry = RSEntry{
-            pe: pe,
-            tag: tag,
-            pc: f2d.pc,
-            dInst: dInst,
-            ready_rs1: ?,
-            ready_rs2: ?,
-            rs1: prs1,
-            rs2: prs2,
-            rd: prd,
-            k_id: f2d.k_id
-        };
-        outputFIFO.enq(entry);
-        `LOG(("[Is] RS entry ", fshow(entry)));
+            let entry = RSEntry{
+                pe: pe,
+                tag: tag,
+                pc: f2d.pc,
+                dInst: dInst,
+                ready_rs1: ?,
+                ready_rs2: ?,
+                rs1: prs1,
+                rs2: prs2,
+                rd: prd,
+                k_id: f2d.k_id
+            };
+            outputFIFO.enq(entry);
+            `LOG(("[Is] RS entry ", fshow(entry)));
+        end
     endrule
 
     rule rlFlush (!starting && flushing);

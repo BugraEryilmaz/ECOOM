@@ -62,6 +62,12 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
             endcase
 
             let data = in.src2 << shift_amount;
+            
+            cacheReqFIFO.enq(CacheReq{
+                word_byte: byte_en,
+                addr: {addr[31:2], 2'b00},
+                data: data
+            });
         end
 
         let op = MemBussiness{
