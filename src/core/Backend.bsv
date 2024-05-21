@@ -98,6 +98,7 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
         bal.flush();
         lsu.pe.flush();
         cdb.flush();
+        rrFIFO.clear();
     endmethod
 
     method Action sendStore() = lsu.sendStore;

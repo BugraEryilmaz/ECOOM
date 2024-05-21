@@ -115,6 +115,8 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
         issue.flush(oldRegRename, oldFreeList);
         dispatch.flush();
         flushing.send();
+        f2i.clear;
+        i2d.clear;
     endmethod
 
     method Action setFile(File file) if(starting);

@@ -48,6 +48,7 @@ module mkFetch(Fetch);
         jumpFIFO.deq;
         pcReg <= addr;
         epochReg <= !epochReg;
+        outputFIFO.clear();
         `LOG(("[IF] Jump to ", fshow(addr)));
     endrule
 

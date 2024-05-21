@@ -95,6 +95,10 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         rsInteger.flush();
         rsLSU.flush();
         rdby.flush();
+        putFIFO.clear();
+        getFIFO.clear();
+        aluIssue.clear();
+        lsuIssue.clear();
     endrule
 
     // METHODS //
