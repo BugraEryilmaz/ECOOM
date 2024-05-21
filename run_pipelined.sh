@@ -1,6 +1,6 @@
 #!/bin/bash
 ./test.sh $1
-./top_pipelined
+./sim/top_pipelined
 if arch | grep -q x86_64 && uname -s | grep -q  Linux; then
     echo "detected intel 64bit linux"
     cat output.log | tools/intelx86_64_linux/spike-dasm > pipelined.log

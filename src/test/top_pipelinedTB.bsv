@@ -16,7 +16,7 @@ function Bool isMMIO(Bit#(32) addr);
     return x;
 endfunction
 
-module mktop_pipelined(Empty);
+module mktop_pipelinedTB(Empty);
     // Instantiate the dual ported memory
     BRAM_Configure cfg = defaultValue();
     cfg.loadFormat = tagged Hex "mem.vmh";

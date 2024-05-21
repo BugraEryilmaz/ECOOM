@@ -30,7 +30,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
     PulseWire flushing <- mkPulseWire;
     
     // RULES //
-    rule addressGenerate;
+    rule addressGenerate if (!flushing);
         let in = inputFIFO.first;
         inputFIFO.deq;
         inflightCounter[0] <= inflightCounter[0] + 1;
@@ -54,7 +54,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
             let byte_en = 0;
             case (size) matches
                 2'b00: // Byte
-                    byte_en = 4'b0000 << offset;
+                    byte_en = 4'b0001 << offset;
                 2'b01: // Half 
                     byte_en = 4'b0011 << offset;
                 2'b10: // Word
@@ -117,7 +117,8 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
     endrule
 
     rule flushEntries (flushing);
-        poisonCounter[0] <= inflightCounter[0];
+        `LOG(("[LSU] Flushing poison count ", poisonCounter[0], " inflight count ", inflightCounter[0]));
+        poisonCounter[0] <= poisonCounter[0] + inflightCounter[0];
         inputFIFO.clear;
         outputFIFO.clear;
     endrule
@@ -125,6 +126,7 @@ module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
     // INTERFACE //
     interface pe = interface PE#(physicalRegSize, robTagSize);
         method Action put(PEInput#(physicalRegSize, robTagSize) entry) if (!flushing);
+            `LOG(("[LSU] put ", fshow(entry)));
             inputFIFO.enq(entry);
         endmethod
 
