@@ -44,7 +44,7 @@ module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         rewindFree.deq();
     endrule
 
-    rule canonicalizeMaps if (!rewinding);
+    rule canonicalizeMaps if (!rewinding && allocatePhys.notEmpty);
         maps[allocateArch.first()] <= allocatePhys.first();
         allocateArch.deq();
     endrule
@@ -68,7 +68,7 @@ module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         return maps[idx];
     endmethod
 
-    method ActionValue#(maybePhysReg) allocate (archReg idx) if (freeList != 0);
+    method ActionValue#(maybePhysReg) allocate (archReg idx) if (freeList != 0 && allocatePhys.notEmpty);
         Vector#(physicalRegCount, Bit#(1)) freeBits = unpack(freeList);
         maybePhysReg allocated = tagged Invalid;
         if (idx != 0) begin
@@ -81,7 +81,7 @@ module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         return allocated;
     endmethod
 
-    method Action graduate (maybePhysReg old_src);
+    method Action graduate (maybePhysReg old_src) if (graduatePhys.notFull);
         if (old_src matches tagged Valid .gradIdx) begin
             graduatePhys.enq(gradIdx);
         end
