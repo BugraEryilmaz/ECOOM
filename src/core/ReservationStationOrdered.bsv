@@ -71,8 +71,8 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
         putQueue.clear;
         readyQueue.clear;
         issueQueue.clear;
-        regHead[0] <= 0;
-        regTail[0] <= 0;
+        regHead <= 0;
+        regTail <= 0;
 
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1)
             entries[i][0] <= tagged Invalid;
