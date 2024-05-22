@@ -40,7 +40,7 @@ module mkCommonDataBus(CDB#(nPEs, physicalRegSize, robTagSize));
     Vector#(nPEs, CDBPort#(physicalRegSize, robTagSize)) construct_ports;
     for(Integer i = 0; i < valueOf(nPEs); i = i + 1) begin
         construct_ports[i] = interface CDBPort#(physicalRegSize, robTagSize);
-            method Action put(PEResult#(physicalRegSize, robTagSize) res) if (!flushing) = inputFIFOs[i].enq(res);
+            method Action put(PEResult#(physicalRegSize, robTagSize) res) if (!flushing && inputFIFOs[i].notFull) = inputFIFOs[i].enq(res);
         endinterface;
     end
     interface ports = construct_ports;
