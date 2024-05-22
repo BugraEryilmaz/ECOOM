@@ -20,15 +20,11 @@ module mkRDYB(RDYBIfc#(idx_bits));
             if (flushWire) begin
                 rf[i] <= 1;
             end else begin
-                if (resetIdx.wget matches tagged Valid .idx) begin
-                    if (fromInteger(i) == idx) begin
-                        rf[i] <= 0;
-                    end
+                if (resetIdx.wget matches tagged Valid .idx &&& fromInteger(i) == idx) begin
+                    rf[i] <= 0;
                 end
-                else if (setIdx.wget matches tagged Valid .idx) begin
-                    if (fromInteger(i) == idx) begin
-                        rf[i] <= 1;
-                    end
+                else if (setIdx.wget matches tagged Valid .idx &&& fromInteger(i) == idx) begin
+                    rf[i] <= 1;
                 end
             end
         end
