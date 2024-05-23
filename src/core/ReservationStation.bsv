@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import Vector::*;
 import FIFO::*;
 import SpecialFIFOs::*;
@@ -24,6 +25,10 @@ interface RS#(numeric type nEntries, numeric type physicalRegSize, numeric type 
     method Action makeReady(Bit#(physicalRegSize) rs);
     method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue();
     method Action flush();
+
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
@@ -118,6 +123,16 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
     method Action flush();
         flushing.send();
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("Reservation Station:");
+        $display("Entries:");
+        for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
+            $display("Entry %0d:", i, fshow(entries[i][0]));
+        end
+    endmethod
+    `endif
 endmodule
 
 module mkReservationStationSized(RS#(32, 5, 6));

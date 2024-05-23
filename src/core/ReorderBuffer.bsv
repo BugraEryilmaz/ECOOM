@@ -31,6 +31,9 @@ interface ROB#(numeric type nEntries, numeric type physicalRegSize);
     method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result);
     method ActionValue#(ROBResult#(physicalRegSize)) drain();
     method Action flush();
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
@@ -141,6 +144,17 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
             cb[i][0] <= tagged Invalid;
         end
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("Reorder Buffer State:");
+        $display("  Head: %0d", regHead);
+        $display("  Tail: %0d", regTail);
+        for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
+            $display("  Entry %0d: ", i, fshow(cb[i][0]));
+        end
+    endmethod
+    `endif
 endmodule
 
 module mkReorderBufferSized(ROB#(64, 6));

@@ -20,6 +20,10 @@ interface Dispatch#(numeric type physicalRegSize, numeric type robTagSize, numer
     method Action flush();
 
     method Action setFile(File file);
+
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
@@ -124,6 +128,15 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         lfh <= file;
         starting <= False;
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("Dispatch:");
+        rsInteger.dumpState;
+        rsLSU.dumpState;
+        rdby.dumpState;
+    endmethod
+    `endif
 endmodule
 
 module mkDispatchSized(Dispatch#(6, 6, 16));

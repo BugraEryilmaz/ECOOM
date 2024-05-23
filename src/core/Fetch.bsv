@@ -25,6 +25,9 @@ interface Fetch;
     method ActionValue#(CacheReq) sendReq();
     method Action getResp(Word resp);
     method Action setFile(File file);
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 module mkFetch(Fetch);
@@ -117,6 +120,14 @@ module mkFetch(Fetch);
         lfh <= file;
         starting <= False;
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("Fetch State:");
+        $display("  PC: 0x%x", pcReg);
+        $display("  Epoch: %d", epochReg);
+    endmethod
+    `endif
 endmodule
 
 module mkFetchSized(Fetch);

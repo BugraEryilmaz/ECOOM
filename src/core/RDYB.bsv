@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import Vector::*;
 import ConfigReg::*;
 import RWire::*;
@@ -7,6 +8,10 @@ interface RDYBIfc#(numeric type idx_bits);
     method Action set (Bit#(idx_bits) idx);
     method Action rst (Bit#(idx_bits) idx);
     method Action flush();
+
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 module mkRDYB(RDYBIfc#(idx_bits));
@@ -52,12 +57,18 @@ module mkRDYB(RDYBIfc#(idx_bits));
     method Action flush();
         flushWire.send();
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("RDYB state:");
+        for (Integer i = 0; i < valueOf(TExp#(idx_bits)); i = i + 1) begin
+            $display("  %d: %d", i, fshow(rf[i]));
+        end
+    endmethod
+    `endif
 endmodule
 
 module mkRDYBSized(RDYBIfc#(6));
     RDYBIfc#(6) rdyb <- mkRDYB;
-    method ActionValue#(Bit#(1)) read (Bit#(6) idx) = rdyb.read(idx);
-    method Action set (Bit#(6) idx) = rdyb.set(idx);
-    method Action rst (Bit#(6) idx) = rdyb.rst(idx);
-    method Action flush() = rdyb.flush();
+    return rdyb;
 endmodule

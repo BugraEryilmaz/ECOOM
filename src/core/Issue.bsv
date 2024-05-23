@@ -19,6 +19,10 @@ interface Issue#(numeric type physicalRegCount, numeric type nRobElements);
     method Action flush(Vector#(32, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
 
     method Action setFile(File file);
+
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 module mkIssue(Issue#(physicalRegCount, nRobElements))
@@ -123,6 +127,14 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
         lfh <= file;
         starting <= False;
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("Issue:");
+        rob.dumpState();
+        regRename.dumpState();
+    endmethod
+    `endif
 endmodule
 
 module mkIssueSized(Issue#(64, 64));

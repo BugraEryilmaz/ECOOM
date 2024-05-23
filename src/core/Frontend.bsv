@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
@@ -28,6 +29,9 @@ interface Frontend#(numeric type nPhysicalRegs, numeric type nRobElements, numer
     method Action jumpAndRewind(Bit#(32) addr, Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) oldRegRename, Bit#(nPhysicalRegs) oldFreeList);
 
     method Action setFile(File file);
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 
@@ -126,6 +130,14 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
         issue.setFile(file);
         dispatch.setFile(file);
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("Frontend");
+        fetch.dumpState();
+        issue.dumpState();
+    endmethod
+    `endif
 endmodule
 
 module mkFrontendSized(Frontend#(64, 64, 24));

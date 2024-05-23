@@ -59,6 +59,23 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
 
     // Communication FIFOs //
     FIFO#(ROBResult#(physicalRegSize)) commitQueue <- mkFIFO;
+
+    // Debug //
+    `ifdef debug
+    Ehr#(2, Bit#(64)) cnt <- mkEhr(0);
+
+    rule rlclk;
+        cnt[0] <= cnt[0] + 1;
+    endrule
+
+    rule deadlockChecker;
+        if(cnt[0] == 200) begin
+            $display("Deadlock detected");
+            frontend.dumpState();
+            $finish;
+        end
+    endrule
+    `endif
     
     // RULES //
     rule rlConnect (!starting);
@@ -120,6 +137,10 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
         `LOG(("[CS] Committing ", fshow(val)));
         stageKonata(lfh, val.completion.k_id, "Cm");
         retired.enq(val.completion.k_id);
+
+        `ifdef debug
+        cnt[1] <= 0;
+        `endif
     endrule
 
     // Administration //

@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import Vector::*;
 import FIFO::*;
 import FIFOF::*;
@@ -10,6 +11,9 @@ interface RegRenameIfc#(numeric type archRegCount, numeric type physicalRegCount
     method Action rewind (Vector#(archRegCount, Maybe#(Bit#(TLog#(physicalRegCount)))) oldState, Bit#(physicalRegCount) oldFree);
     method Vector#(archRegCount, Maybe#(Bit#(TLog#(physicalRegCount)))) readState();
     method ActionValue#(Bit#(physicalRegCount)) readFree();
+    `ifdef debug
+    method Action dumpState();
+    `endif
 endinterface
 
 module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
@@ -68,7 +72,7 @@ module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         return maps[idx];
     endmethod
 
-    method ActionValue#(maybePhysReg) allocate (archReg idx) if (freeList != 0 && allocatePhys.notEmpty);
+    method ActionValue#(maybePhysReg) allocate (archReg idx) if (freeList != 0 && allocatePhys.notFull);
         Vector#(physicalRegCount, Bit#(1)) freeBits = unpack(freeList);
         maybePhysReg allocated = tagged Invalid;
         if (idx != 0) begin
@@ -105,6 +109,17 @@ module mkRegRename(RegRenameIfc#(archRegCount, physicalRegCount))
         Bit#(physicalRegCount) ret = freeList;
         return ret;
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("RegRename:");
+        for ( Integer i = 0; i < valueOf(archRegCount); i = i + 1 ) begin
+            $display("  %d -> %d", i, maps[i]);
+        end
+        Vector#(physicalRegCount, Bit#(1)) freeBits = unpack(freeList);
+        $display("  Free: ", fshow(freeBits));
+    endmethod
+    `endif
 endmodule
 
 module mkRegRenameSized(RegRenameIfc#(32, 64));

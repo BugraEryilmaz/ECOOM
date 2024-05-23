@@ -96,6 +96,17 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
     method Action flush();
         flushing.send();
     endmethod
+
+    `ifdef debug
+    method Action dumpState();
+        $display("RS Ordered:");
+        $display("  Head: %0d", regHead);
+        $display("  Tail: %0d", regTail);
+        for (Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
+            $display("  Entry %0d: %s", i, fshow(entries[i][0]));
+        end
+    endmethod
+    `endif
 endmodule
 
 module mkReservationStationOrderedSized(RS#(32, 5, 6));
