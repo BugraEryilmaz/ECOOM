@@ -2,6 +2,7 @@
 import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
+import Ehr::*;
 import MemTypes::*;
 import KonataHelper::*;
 
@@ -32,52 +33,42 @@ endinterface
 
 module mkFetch(Fetch);
     // Communication FIFOs //
-    FIFOF#(Bit#(32)) jumpFIFO <- mkBypassFIFOF;
     FIFO#(FetchToDecode) outputFIFO <- mkBypassFIFO;
     FIFO#(CacheReq) reqFIFO <- mkBypassFIFO;
     FIFO#(Word) respFIFO <- mkBypassFIFO;
     FIFO#(IMemBussiness) inflightFIFO <- mkFIFO;
 
-    Reg#(Bit#(32)) pcReg <- mkReg(0);
-    Reg#(Bool) epochReg <- mkReg(False);
+    Ehr#(2, Bit#(32)) pcReg <- mkEhr(0);
+    Ehr#(2, Bool) epochReg <- mkEhr(False);
 
     let lfh <- mkReg(InvalidFile);
 	Reg#(KonataId) fresh_id <- mkReg(0);
     Reg#(Bool) starting <- mkReg(True);
 
     // RULES //
-    rule rlJump (!starting && jumpFIFO.notEmpty);
-        let addr = jumpFIFO.first;
-        jumpFIFO.deq;
-        pcReg <= addr;
-        epochReg <= !epochReg;
-        outputFIFO.clear();
-        `LOG(("[IF] Jump to ", fshow(addr)));
-    endrule
-
-    rule rlAddressGeneration (!starting && !jumpFIFO.notEmpty);
+    rule rlAddressGeneration (!starting);
         let iid <- fetch1Konata(lfh, fresh_id, 0);
 
         reqFIFO.enq(CacheReq{
             word_byte: 0,
-            addr: pcReg,
+            addr: pcReg[1],
             data: ?
         });
         
-        let ppc = pcReg + 4;
+        let ppc = pcReg[1] + 4;
         inflightFIFO.enq(IMemBussiness{
-            pc: pcReg,
+            pc: pcReg[1],
             ppc: ppc,
-            epoch: epochReg,
+            epoch: epochReg[1],
             k_id: iid
         });
 
-        labelKonataLeft(lfh, iid, $format("(e%d) 0x%x: ", epochReg, pcReg));
-        `LOG(("[IF] Fetching 0x%x", pcReg));
-        pcReg <= ppc;
+        labelKonataLeft(lfh, iid, $format("(e%d) 0x%x: ", epochReg[1], pcReg[1]));
+        `LOG(("[IF] Fetching 0x%x", pcReg[1]));
+        pcReg[1] <= ppc;
     endrule
 
-    rule rlGetResp (!starting && !jumpFIFO.notEmpty);
+    rule rlGetResp (!starting);
         let resp = respFIFO.first;
         respFIFO.deq;
         let info = inflightFIFO.first;
@@ -85,7 +76,7 @@ module mkFetch(Fetch);
 
         `LOG(("[IF] Received ", fshow(resp)));
 
-        if(info.epoch == epochReg) begin
+        if(info.epoch == epochReg[1]) begin
             outputFIFO.enq(FetchToDecode{
                 pc: info.pc,
                 ppc: info.ppc,
@@ -97,7 +88,10 @@ module mkFetch(Fetch);
 
     // METHODS //
     method Action jumpTo(Bit#(32) addr);
-        jumpFIFO.enq(addr);
+        pcReg[0] <= addr;
+        epochReg[0] <= !epochReg[0];
+        outputFIFO.clear();
+        `LOG(("[IF] Jump to ", fshow(addr)));
     endmethod
 
     method ActionValue#(FetchToDecode) getInst;
@@ -124,8 +118,8 @@ module mkFetch(Fetch);
     `ifdef debug
     method Action dumpState();
         $display("Fetch State:");
-        $display("  PC: 0x%x", pcReg);
-        $display("  Epoch: %d", epochReg);
+        $display("  PC: 0x%x", pcReg[0]);
+        $display("  Epoch: %d", epochReg[0]);
     endmethod
     `endif
 endmodule
