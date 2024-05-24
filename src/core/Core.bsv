@@ -78,9 +78,14 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
     `endif
     
     // RULES //
-    rule rlConnect (!starting);
-        let inst <- frontend.get();
-        backend.put(inst);
+    rule rlConnectALU (!starting);
+        let inst <- frontend.getALU();
+        backend.putALU(inst);
+    endrule
+
+    rule rlConnectLSU (!starting);
+        let inst <- frontend.getLSU();
+        backend.putLSU(inst);
     endrule
 
     rule rlComplete (!starting);

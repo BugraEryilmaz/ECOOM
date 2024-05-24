@@ -12,7 +12,8 @@ import MemTypes::*;
 import KonataHelper::*;
 
 interface Backend#(numeric type physicalRegSize, numeric type robTagSize, numeric type nInflight);
-    method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
+    method Action putALU(RSEntry#(physicalRegSize, robTagSize) entry);
+    method Action putLSU(RSEntry#(physicalRegSize, robTagSize) entry);
     method ActionValue#(PEResult#(physicalRegSize, robTagSize)) get();
     method Action flush();
 
@@ -31,7 +32,6 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
 
     // Internal Structures //
     PulseWire flushing <- mkPulseWire;
-    RegRead#(physicalRegSize, robTagSize) regRead <- mkRegRead;
     PE#(physicalRegSize, robTagSize) ialu <- mkIALU;
     PE#(physicalRegSize, robTagSize) bal <- mkBAL;
     LSU#(physicalRegSize, robTagSize, nInflight) lsu <- mkLSU;
@@ -45,21 +45,6 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
     FIFO#(peInput) rrFIFO <- mkFIFO;
 
     // RULES //
-    rule rlReadRead(!starting && !flushing);
-        let val <- regRead.get();
-        rrFIFO.enq(val);
-        stageKonata(lfh, val.k_id, "Rr");
-    endrule
-
-    rule rlArbit (!starting && !flushing);
-        let val = rrFIFO.first;
-        rrFIFO.deq();
-        case(val.pe) 
-            IALU: ialu.put(val);
-            BAL :  bal.put(val);
-            LSU :  lsu.pe.put(val);
-        endcase
-    endrule
 
     rule rlIALU (!starting && !flushing);
         let val <- ialu.get();
@@ -80,20 +65,46 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
     endrule
 
     // METHODS //
-    method Action put(RSEntry#(physicalRegSize, robTagSize) entry) if (!flushing);
-        regRead.put(entry);
+    method Action putALU(RSEntry#(physicalRegSize, robTagSize) entry) if (!flushing);
+        PEInput#(physicalRegSize, robTagSize) peInput = PEInput {
+            pe: entry.pe,
+            tag: entry.tag,
+            pc: entry.pc,
+            dInst: entry.dInst,
+            imm: getImmediate(entry.dInst),
+            src1: fromMaybe(?, entry.src1),
+            src2: fromMaybe(?, entry.src2),
+            rd: entry.rd,
+            k_id: entry.k_id
+        };        
+        case(peInput.pe) 
+            IALU: ialu.put(peInput);
+            BAL :  bal.put(peInput);
+        endcase
+    endmethod
+
+    method Action putLSU(RSEntry#(physicalRegSize, robTagSize) entry) if (!flushing);
+        PEInput#(physicalRegSize, robTagSize) peInput = PEInput {
+            pe: entry.pe,
+            tag: entry.tag,
+            pc: entry.pc,
+            dInst: entry.dInst,
+            imm: getImmediate(entry.dInst),
+            src1: fromMaybe(?, entry.src1),
+            src2: fromMaybe(?, entry.src2),
+            rd: entry.rd,
+            k_id: entry.k_id
+        };
+        lsu.pe.put(peInput);
     endmethod
 
     method ActionValue#(PEResult#(physicalRegSize, robTagSize)) get() if (!flushing);
         let res <- cdb.get();
-        if (res.rd matches tagged Valid .rd)
-            regRead.putToRF(rd, res.result);
         return res;
     endmethod
     
     method Action flush();
         flushing.send;
-        regRead.flush();
         ialu.flush();
         bal.flush();
         lsu.pe.flush();

@@ -14,7 +14,7 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
     Vector#(nEntries, Ehr#(3, Maybe#(element))) entries <- replicateM(mkEhr(Invalid));
     RWire#(Vector#(nEntries, Maybe#(element))) entriesWire <- mkRWire;
     FIFO#(element) putQueue <- mkBypassFIFO;
-    FIFO#(Bit#(physicalRegSize)) readyQueue <- mkBypassFIFO;
+    FIFO#(WakeUpRegVal#(physicalRegSize)) readyQueue <- mkBypassFIFO;
     FIFO#(RSEntry#(physicalRegSize, robTagSize)) issueQueue <- mkFIFO;
     PulseWire flushing <- mkPulseWire;
     Reg#(Bit#(entrySize)) regHead <- mkReg(0);
@@ -32,17 +32,22 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
     endrule
 
     rule wakeUpReg (!flushing && isValid(entriesWire.wget));
-        let rs = readyQueue.first;
+        let wake = readyQueue.first;
         readyQueue.deq;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
             let x = fromMaybe(?, entriesWire.wget());
             if(isValid(x[i])) begin
                 let val = fromMaybe(?, x[i]);
-                if(val.rs1 matches tagged Valid .rs1)
-                    val.ready_rs1 = val.ready_rs1 || (rs1 == rs);
+                if(val.rs1 matches tagged Valid .rs1 &&& wake.rs matches tagged Valid .rs &&& rs1 == rs) begin
+                    val.ready_rs1 = True;
+                    val.src1 = tagged Valid wake.src;
+                end
 
-                if(val.rs2 matches tagged Valid .rs2)
-                    val.ready_rs2 = val.ready_rs2 || (rs2 == rs);
+                if(val.rs2 matches tagged Valid .rs2 &&& wake.rs matches tagged Valid .rs &&& rs2 == rs) begin
+                    val.ready_rs2 = True;
+                    val.src2 = tagged Valid wake.src;
+                end
+                
                 entries[i][0] <= tagged Valid(val);
             end
         end
@@ -83,8 +88,8 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
         putQueue.enq(entry);
     endmethod
 
-    method Action makeReady(Bit#(physicalRegSize) rs) if (!flushing);
-        readyQueue.enq(rs);
+    method Action makeReady(WakeUpRegVal#(physicalRegSize) wake) if (!flushing);
+        readyQueue.enq(wake);
     endmethod
 
     method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue() if (!flushing);

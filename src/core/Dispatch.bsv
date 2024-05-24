@@ -10,13 +10,15 @@ import ReservationStation::*;
 import ReservationStationOrdered::*;
 import ReorderBuffer::*;
 import RegRename::*;
+import RegisterFile::*;
 import RDYB::*;
 import KonataHelper::*;
 
 interface Dispatch#(numeric type physicalRegSize, numeric type robTagSize, numeric type nRSEntries);
     method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
-    method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) get(); 
-    method Action makeReady(Bit#(physicalRegSize) rs);
+    method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) getALU(); 
+    method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) getLSU(); 
+    method Action makeReady(WakeUpRegVal#(physicalRegSize) rs);
     method Action flush();
 
     method Action setFile(File file);
@@ -37,6 +39,7 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     RS#(nRSEntries, physicalRegSize, robTagSize) rsInteger <- mkReservationStation;
     RS#(nRSEntries, physicalRegSize, robTagSize) rsLSU <- mkReservationStationOrdered;
     RDYBIfc#(physicalRegSize) rdby <- mkRDYB;
+    RFIfc#(physicalRegSize, 32) rf <- mkRegisterFile;
 
     let lfh <- mkReg(InvalidFile);
 	Reg#(KonataId) fresh_id <- mkReg(0);
@@ -44,7 +47,6 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
 
     // Communication FIFOs //
     FIFO#(rsEntry) putFIFO <- mkBypassFIFO;
-    FIFO#(rsEntry) getFIFO <- mkBypassFIFO;
     FIFOF#(rsEntry) aluIssue <- mkBypassFIFOF;
     FIFOF#(rsEntry) lsuIssue <- mkBypassFIFOF;
 
@@ -57,6 +59,21 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         let ready_rs2 <- rdby.read(fromMaybe(?, entry.rs2));
         entry.ready_rs1 = isValid(entry.rs1) ? (ready_rs1 == 1 ? True : False) : True;
         entry.ready_rs2 = isValid(entry.rs2) ? (ready_rs2 == 1 ? True : False) : True;
+        
+        if (entry.rs1 matches tagged Valid .rs1) begin
+            let src1 <- rf.read(rs1);
+            entry.src1 = tagged Valid src1;
+        end else begin
+            entry.src1 = tagged Valid 0;
+        end
+
+        if (entry.rs2 matches tagged Valid .rs2) begin
+            let src2 <- rf.read(rs2);
+            entry.src2 = tagged Valid src2;
+        end else begin
+            entry.src2 = tagged Valid 0;
+        end
+
         if(entry.rd matches tagged Valid .rd) begin
             rdby.rst(rd);
         end
@@ -79,28 +96,11 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         `LOG(("[Ds] Sent to LSU ", fshow(val)));
     endrule
 
-    rule rlDispatch (!starting && !flushing && (aluIssue.notEmpty || lsuIssue.notEmpty));
-        let val = ?;
-        if(lsuIssue.notEmpty) begin
-            val = lsuIssue.first;
-            lsuIssue.deq;
-        end else begin
-            val = aluIssue.first;
-            aluIssue.deq;
-        end
-
-        getFIFO.enq(val);
-        
-        stageKonata(lfh, val.k_id, "Ds");
-        `LOG(("[Ds] Sent to Backend ", fshow(val)));
-    endrule
-
     rule rlFlush (!starting && flushing);
         rsInteger.flush();
         rsLSU.flush();
         rdby.flush();
         putFIFO.clear();
-        getFIFO.clear();
         aluIssue.clear();
         lsuIssue.clear();
     endrule
@@ -110,16 +110,25 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         putFIFO.enq(entry);
     endmethod
 
-    method ActionValue#(rsEntry) get() if(!flushing);
-        let val = getFIFO.first;
-        getFIFO.deq;
+    method ActionValue#(rsEntry) getALU() if(!flushing);
+        let val = aluIssue.first;
+        aluIssue.deq;
         return val;
     endmethod
 
-    method Action makeReady(Bit#(physicalRegSize) rs) if(!flushing);
-        rsInteger.makeReady(rs);
-        rsLSU.makeReady(rs);
-        rdby.set(rs);
+    method ActionValue#(rsEntry) getLSU() if(!flushing);
+        let val = lsuIssue.first;
+        lsuIssue.deq;
+        return val;
+    endmethod
+
+    method Action makeReady(WakeUpRegVal#(physicalRegSize) wake) if(!flushing);
+        rsInteger.makeReady(wake);
+        rsLSU.makeReady(wake);
+        if (wake.rs matches tagged Valid .rs) begin
+            rdby.set(rs);
+            rf.write(rs, wake.src);
+        end
     endmethod
 
     method Action flush() = flushing.send();

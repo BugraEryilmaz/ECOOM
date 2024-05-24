@@ -18,7 +18,8 @@ interface Frontend#(numeric type nPhysicalRegs, numeric type nRobElements, numer
     method Action getResp(Word resp);
 
     // Push to backend
-    method ActionValue#(RSEntry#(TLog#(nPhysicalRegs), TLog#(nRobElements))) get(); 
+    method ActionValue#(RSEntry#(TLog#(nPhysicalRegs), TLog#(nRobElements))) getLSU(); 
+    method ActionValue#(RSEntry#(TLog#(nPhysicalRegs), TLog#(nRobElements))) getALU(); 
 
     // ROB Interface
     method Action complete(PEResult#(TLog#(nPhysicalRegs), TLog#(nRobElements)) result);
@@ -91,8 +92,13 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     endmethod
 
     // Push to backend
-    method ActionValue#(rsEntry) get() if(!flushing); 
-        let val <- dispatch.get();
+    method ActionValue#(rsEntry) getALU() if(!flushing); 
+        let val <- dispatch.getALU();
+        return val;
+    endmethod
+
+    method ActionValue#(rsEntry) getLSU() if(!flushing); 
+        let val <- dispatch.getLSU();
         return val;
     endmethod
 
@@ -100,7 +106,10 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     method Action complete(PEResult#(TLog#(nPhysicalRegs), TLog#(nRobElements)) result) if(!flushing);
         issue.complete(result);
         if(result.rd matches tagged Valid .rd) begin
-            dispatch.makeReady(rd);
+            dispatch.makeReady(WakeUpRegVal{
+                rs: result.rd, 
+                src: result.result
+            });
         end
     endmethod
     

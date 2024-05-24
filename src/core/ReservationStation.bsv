@@ -16,13 +16,20 @@ typedef struct {
     Bool ready_rs2;
     Maybe#(Bit#(physicalRegSize)) rs1;
     Maybe#(Bit#(physicalRegSize)) rs2;
+    Maybe#(Bit#(32)) src1;
+    Maybe#(Bit#(32)) src2;
     Maybe#(Bit#(physicalRegSize)) rd;
     KonataId k_id;
 } RSEntry#(numeric type physicalRegSize, numeric type robTagSize) deriving (Bits, FShow);
 
+typedef struct {
+    Maybe#(Bit#(physicalRegSize)) rs;
+    Bit#(32) src;
+} WakeUpRegVal#(numeric type physicalRegSize) deriving (Bits, FShow);
+
 interface RS#(numeric type nEntries, numeric type physicalRegSize, numeric type robTagSize);
     method Action put(RSEntry#(physicalRegSize, robTagSize) entry);
-    method Action makeReady(Bit#(physicalRegSize) rs);
+    method Action makeReady(WakeUpRegVal#(physicalRegSize) wake);
     method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue();
     method Action flush();
 
@@ -38,7 +45,7 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
     Vector#(nEntries, Ehr#(3, Maybe#(element))) entries <- replicateM(mkEhr(Invalid));
     RWire#(Vector#(nEntries, Maybe#(element))) entriesWire <- mkRWire;
     FIFO#(element) putQueue <- mkBypassFIFO;
-    FIFO#(Bit#(physicalRegSize)) readyQueue <- mkBypassFIFO;
+    FIFO#(WakeUpRegVal#(physicalRegSize)) readyQueue <- mkBypassFIFO;
     FIFO#(RSEntry#(physicalRegSize, robTagSize)) issueQueue <- mkFIFO;
     PulseWire flushing <- mkPulseWire;
 
@@ -62,17 +69,22 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
     endrule
 
     rule wakeUpReg (!flushing && isValid(entriesWire.wget));
-        let rs = readyQueue.first;
+        let wake = readyQueue.first;
         readyQueue.deq;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
             let x = fromMaybe(?, entriesWire.wget());
             if(isValid(x[i])) begin
                 let val = fromMaybe(?, x[i]);
-                if(val.rs1 matches tagged Valid .rs1)
-                    val.ready_rs1 = val.ready_rs1 || (rs1 == rs);
+                if(val.rs1 matches tagged Valid .rs1 &&& wake.rs matches tagged Valid .rs &&& rs1 == rs) begin
+                    val.ready_rs1 = True;
+                    val.src1 = tagged Valid wake.src;
+                end
 
-                if(val.rs2 matches tagged Valid .rs2)
-                    val.ready_rs2 = val.ready_rs2 || (rs2 == rs);
+                if(val.rs2 matches tagged Valid .rs2 &&& wake.rs matches tagged Valid .rs &&& rs2 == rs) begin
+                    val.ready_rs2 = True;
+                    val.src2 = tagged Valid wake.src;
+                end
+
                 entries[i][0] <= tagged Valid(val);
             end
         end
@@ -110,8 +122,8 @@ module mkReservationStation(RS#(nEntries, physicalRegSize, robTagSize))
         putQueue.enq(entry);
     endmethod
 
-    method Action makeReady(Bit#(physicalRegSize) rs) if (!flushing);
-        readyQueue.enq(rs);
+    method Action makeReady(WakeUpRegVal#(physicalRegSize) wake) if (!flushing);
+        readyQueue.enq(wake);
     endmethod
 
     method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue() if (!flushing);

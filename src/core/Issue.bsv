@@ -91,6 +91,8 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
                 ready_rs2: ?,
                 rs1: prs1,
                 rs2: prs2,
+                src1: ?,
+                src2: ?,
                 rd: prd,
                 k_id: f2d.k_id
             };
