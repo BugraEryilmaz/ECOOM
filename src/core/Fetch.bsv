@@ -51,21 +51,21 @@ module mkFetch(Fetch);
 
         reqFIFO.enq(CacheReq{
             word_byte: 0,
-            addr: pcReg[1],
+            addr: pcReg[0],
             data: ?
         });
         
-        let ppc = pcReg[1] + 4;
+        let ppc = pcReg[0] + 4;
         inflightFIFO.enq(IMemBussiness{
-            pc: pcReg[1],
+            pc: pcReg[0],
             ppc: ppc,
-            epoch: epochReg[1],
+            epoch: epochReg[0],
             k_id: iid
         });
 
-        labelKonataLeft(lfh, iid, $format("(e%d) 0x%x: ", epochReg[1], pcReg[1]));
-        `LOG(("[IF] Fetching 0x%x", pcReg[1]));
-        pcReg[1] <= ppc;
+        labelKonataLeft(lfh, iid, $format("(e%d) 0x%x: ", epochReg[0], pcReg[0]));
+        `LOG(("[IF] Fetching 0x%x", pcReg[0]));
+        pcReg[0] <= ppc;
     endrule
 
     rule rlGetResp (!starting);
@@ -76,7 +76,7 @@ module mkFetch(Fetch);
 
         `LOG(("[IF] Received ", fshow(resp)));
 
-        if(info.epoch == epochReg[1]) begin
+        if(info.epoch == epochReg[0]) begin
             outputFIFO.enq(FetchToDecode{
                 pc: info.pc,
                 ppc: info.ppc,
@@ -88,8 +88,8 @@ module mkFetch(Fetch);
 
     // METHODS //
     method Action jumpTo(Bit#(32) addr);
-        pcReg[0] <= addr;
-        epochReg[0] <= !epochReg[0];
+        pcReg[1] <= addr;
+        epochReg[1] <= !epochReg[1];
         outputFIFO.clear();
         `LOG(("[IF] Jump to ", fshow(addr)));
     endmethod
