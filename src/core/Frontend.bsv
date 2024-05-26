@@ -54,7 +54,7 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     Reg#(Bool) starting <- mkReg(True);
 
     // Communication FIFOs //
-    FIFO#(FetchToDecode) f2i <- mkFIFO;
+    FIFO#(FetchToDecode) f2i <- mkBypassFIFO;
     FIFO#(rsEntry) i2d <- mkFIFO;
 
     // RULES

@@ -16,7 +16,7 @@ endinterface
 
 module mkCommonDataBus(CDB#(nPEs, physicalRegSize, robTagSize));
     Vector#(nPEs, FIFOF#(PEResult#(physicalRegSize, robTagSize))) inputFIFOs <- replicateM(mkBypassFIFOF);
-    FIFO#(PEResult#(physicalRegSize, robTagSize)) outputFIFO <- mkFIFO;
+    FIFO#(PEResult#(physicalRegSize, robTagSize)) outputFIFO <- mkBypassFIFO;
     PulseWire flushing <- mkPulseWire;
 
     rule arbit (!flushing);
