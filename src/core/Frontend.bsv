@@ -54,27 +54,27 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     Reg#(Bool) starting <- mkReg(True);
 
     // Communication FIFOs //
-    FIFO#(FetchToDecode) f2i <- mkBypassFIFO;
+    FIFO#(FetchToDecode) f2i <- mkFIFO;
     FIFO#(rsEntry) i2d <- mkFIFO;
 
     // RULES
-    rule rlF2Q (!starting && !flushing);
+    rule rlF2Q (!starting);
         let val <- fetch.getInst;
         f2i.enq(val);
     endrule
 
-    rule rlQ2I (!starting && !flushing);
+    rule rlQ2I (!starting);
         let val = f2i.first;
         f2i.deq;
         issue.put(val);
     endrule
 
-    rule rlI2Q (!starting && !flushing);
+    rule rlI2Q (!starting);
         let val <- issue.get;
         i2d.enq(val);
     endrule
 
-    rule rlQ2D (!starting && !flushing);
+    rule rlQ2D (!starting);
         let val = i2d.first;
         i2d.deq;
         dispatch.put(val);

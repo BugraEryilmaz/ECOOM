@@ -44,12 +44,11 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     // TODO Rewrite the reorder buffer :(
     
     // Data Structures
-    Vector#(nEntries, Ehr#(3, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))) cb <- replicateM(mkEhr(Invalid));
+    Vector#(nEntries, Ehr#(4, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))) cb <- replicateM(mkEhr(Invalid));
     RWire#(Vector#(nEntries, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))) readCb <- mkRWire;
     FIFO#(robReservation) rs <- mkSizedFIFO(valueOf(nEntries));
-    Reg#(Bit#(TLog#(nEntries))) regHead <- mkReg(0);
-    Reg#(Bit#(TLog#(nEntries))) regTail <- mkReg(0);
-    PulseWire flushing <- mkPulseWire;
+    Ehr#(2, Bit#(TLog#(nEntries))) regHead <- mkEhr(0);
+    Ehr#(2, Bit#(TLog#(nEntries))) regTail <- mkEhr(0);
 
     // Communication FIFOs //
     FIFO#(PEResult#(physicalRegSize, TLog#(nEntries))) inputFIFO <- mkBypassFIFO;
@@ -66,8 +65,8 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
         readCb.wset(entriesSignal);
     endrule
 
-    rule rlDrain (!flushing && isValid(readCb.wget));
-        if(fromMaybe(?, readCb.wget)[regHead] matches tagged Valid .validEntry) begin
+    rule rlDrain (isValid(readCb.wget));
+        if(fromMaybe(?, readCb.wget)[regHead[0]] matches tagged Valid .validEntry) begin
             let fromRS = rs.first;
             `LOG(("[ROB] Waiting on ", fshow(fromRS)));
             if (validEntry matches tagged Valid .fromCB) begin
@@ -76,8 +75,8 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
                     reservation: fromRS,
                     completion: fromCB
                 });
-                cb[regHead][0] <= tagged Invalid;
-                regHead <= regHead + 1;
+                cb[regHead[0]][0] <= tagged Invalid;
+                regHead[0] <= regHead[0] + 1;
             end
             else if(fromRS.isStore) begin
                 rs.deq;
@@ -89,13 +88,13 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
                         k_id: ?
                     }
                 });
-                cb[regHead][0] <= tagged Invalid;
-                regHead <= regHead + 1;
+                cb[regHead[0]][0] <= tagged Invalid;
+                regHead[0] <= regHead[0] + 1;
             end
         end
     endrule
 
-    rule rlComplete (!flushing && isValid(readCb.wget));
+    rule rlComplete (isValid(readCb.wget));
         let result = inputFIFO.first;
         inputFIFO.deq;
 
@@ -106,50 +105,49 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
         }));
     endrule
 
-    rule rlReserve (!flushing && isValid(readCb.wget));
-        if (fromMaybe(?, readCb.wget)[regTail] matches tagged Invalid) begin
-            tagFIFO.enq(regTail);
-            cb[regTail][2] <= tagged Valid (tagged Invalid);
-            regTail <= regTail + 1;
+    rule rlReserve (isValid(readCb.wget));
+        if (fromMaybe(?, readCb.wget)[regTail[0]] matches tagged Invalid) begin
+            tagFIFO.enq(regTail[0]);
+            cb[regTail[0]][2] <= tagged Valid (tagged Invalid);
+            regTail[0] <= regTail[0] + 1;
         end
     endrule
 
     // METHODS //
-    method ActionValue#(Bit#(TLog#(nEntries))) reserve(ROBReservation#(physicalRegSize) element) if(!flushing);
+    method ActionValue#(Bit#(TLog#(nEntries))) reserve(ROBReservation#(physicalRegSize) element);
         let tag = tagFIFO.first;
         tagFIFO.deq;
         rs.enq(element);
         return tag;
     endmethod
 
-    method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result) if (!flushing);
+    method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result);
         inputFIFO.enq(result);
     endmethod
 
-    method ActionValue#(ROBResult#(physicalRegSize)) drain() if (!flushing);
+    method ActionValue#(ROBResult#(physicalRegSize)) drain();
         let val = completion.first;
         completion.deq;
         return val;
     endmethod
     
     method Action flush();
-        flushing.send();   
         inputFIFO.clear();
         completion.clear();
         tagFIFO.clear();
         rs.clear();
-        regHead <= 0;
-        regTail <= 0;
+        regHead[1] <= 0;
+        regTail[1] <= 0;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
-            cb[i][0] <= tagged Invalid;
+            cb[i][3] <= tagged Invalid;
         end
     endmethod
 
     `ifdef debug
     method Action dumpState();
         $display("Reorder Buffer State:");
-        $display("  Head: %0d", regHead);
-        $display("  Tail: %0d", regTail);
+        $display("  Head: %0d", regHead[0]);
+        $display("  Tail: %0d", regTail[0]);
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
             $display("  Entry %0d: ", i, fshow(cb[i][0]));
         end
