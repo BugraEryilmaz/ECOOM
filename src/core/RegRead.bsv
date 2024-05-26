@@ -29,11 +29,11 @@ module mkRegRead(RegRead#(physicalRegSize, robTagSize));
 
         Bit#(32) src1 = 0;
         if (val.rs1 matches tagged Valid .rs1)
-            src1 <- rf.read(rs1);
+            src1 <- rf.read1(rs1);
 
         Bit#(32) src2 = 0;
         if (val.rs2 matches tagged Valid .rs2)
-            src2 <- rf.read(rs2);
+            src2 <- rf.read2(rs2);
 
         Bit#(32) imm = getImmediate(val.dInst);
 

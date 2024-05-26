@@ -61,14 +61,14 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
         entry.ready_rs2 = isValid(entry.rs2) ? (ready_rs2 == 1 ? True : False) : True;
         
         if (entry.rs1 matches tagged Valid .rs1) begin
-            let src1 <- rf.read(rs1);
+            let src1 <- rf.read1(rs1);
             entry.src1 = tagged Valid src1;
         end else begin
             entry.src1 = tagged Valid 0;
         end
 
         if (entry.rs2 matches tagged Valid .rs2) begin
-            let src2 <- rf.read(rs2);
+            let src2 <- rf.read2(rs2);
             entry.src2 = tagged Valid src2;
         end else begin
             entry.src2 = tagged Valid 0;

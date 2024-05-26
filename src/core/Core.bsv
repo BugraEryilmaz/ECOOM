@@ -51,8 +51,8 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
             $fwrite(f, "Kanata\t0004\nC=\t1\n");
             starting <= False;
             `LOG(("Starting\n"));
-            frontend.setFile(lfh);
-            backend.setFile(lfh);
+            frontend.setFile(f);
+            backend.setFile(f);
         end
 		konataTic(lfh);
 	endrule
