@@ -14,3 +14,5 @@ else
     echo "unsupported architecture, fallback to unfiltered mode"
     cat output.log | tools/spike-dasm > pipelined.log
 fi
+
+python3 tools/squasher.py pipelined.log clean.log

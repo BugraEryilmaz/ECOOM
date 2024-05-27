@@ -13,6 +13,7 @@ typedef struct {
     Maybe#(Bit#(5)) arch_rd;
     Maybe#(Bit#(physicalRegSize)) grad_rd;
     Bit#(32) pc;
+    KonataId k_id;
 } ROBReservation#(numeric type physicalRegSize) deriving (Bits, FShow);
 
 typedef struct {

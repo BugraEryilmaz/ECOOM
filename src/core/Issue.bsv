@@ -71,7 +71,8 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
                 isStore: isStore,
                 arch_rd: dInst.valid_rd ? tagged Valid rd : tagged Invalid,
                 grad_rd: old_prd,
-                pc: f2d.pc
+                pc: f2d.pc,
+                k_id: f2d.k_id
             };
 
             let tag <- rob.reserve(reservation);

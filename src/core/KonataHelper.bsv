@@ -82,7 +82,7 @@ function Action commitKonata(File f, KonataId konataCtr, Reg#(KonataId) konataCm
     action
         konataCmt <= konataCmt + 1;
         oldCommit <= konataCtr;
-        if (oldCommit - konataCtr > 1) begin
+        if (oldCommit - konataCtr > 2) begin
             $fdisplay(f, "$$ %d %d", oldCommit, konataCtr);
         end
 //        $display("[KONATA]E\t%d\t%d\t%s",konataCtr,0,"W");

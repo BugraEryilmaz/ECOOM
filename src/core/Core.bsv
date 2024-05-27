@@ -141,8 +141,8 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
         end
         
         `LOG(("[CS] Committing ", fshow(val)));
-        stageKonata(lfh, val.completion.k_id, "Cm");
-        retired.enq(val.completion.k_id);
+        stageKonata(lfh, val.reservation.k_id, "Cm");
+        retired.enq(val.reservation.k_id);
 
         `ifdef debug
         cnt[1] <= 0;
