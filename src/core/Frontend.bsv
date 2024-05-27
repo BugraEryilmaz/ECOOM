@@ -12,6 +12,12 @@ import ReorderBuffer::*;
 import ReservationStation::*;
 import KonataHelper::*;
 
+typedef struct {
+    Bit#(32) addr;
+    Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) oldRegRename;
+    Bit#(nPhysicalRegs) oldFreeList;
+} JumpState#(numeric type nPhysicalRegs) deriving(Bits, FShow);
+
 interface Frontend#(numeric type nPhysicalRegs, numeric type nRobElements, numeric type nRSEntries);
     // IMEM Interface
     method ActionValue#(CacheReq) sendReq();
@@ -57,27 +63,41 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     FIFO#(FetchToDecode) f2i <- mkBypassFIFO;
     FIFO#(rsEntry) i2d <- mkFIFO;
 
+    // Flush
+    FIFO#(JumpState#(nPhysicalRegs)) flushFifo <- mkBypassFIFO;
+
     // RULES
-    rule rlF2Q (!starting);
+    rule rlF2Q (!starting && !flushing);
         let val <- fetch.getInst;
         f2i.enq(val);
     endrule
 
-    rule rlQ2I (!starting);
+    rule rlQ2I (!starting && !flushing);
         let val = f2i.first;
         f2i.deq;
         issue.put(val);
     endrule
 
-    rule rlI2Q (!starting);
+    rule rlI2Q (!starting && !flushing);
         let val <- issue.get;
         i2d.enq(val);
     endrule
 
-    rule rlQ2D (!starting);
+    rule rlQ2D (!starting && !flushing);
         let val = i2d.first;
         i2d.deq;
         dispatch.put(val);
+    endrule
+
+    rule rlFlush;
+        let val = flushFifo.first;
+        flushFifo.deq;
+        fetch.jumpTo(val.addr);
+        issue.flush(val.oldRegRename, val.oldFreeList);
+        dispatch.flush();
+        flushing.send();
+        f2i.clear;
+        i2d.clear;
     endrule
 
     // METHODS //
@@ -124,12 +144,7 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
 
     // Jump and rewind
     method Action jumpAndRewind(Bit#(32) addr, Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) oldRegRename, Bit#(nPhysicalRegs) oldFreeList);
-        fetch.jumpTo(addr);
-        issue.flush(oldRegRename, oldFreeList);
-        dispatch.flush();
-        flushing.send();
-        f2i.clear;
-        i2d.clear;
+        flushFifo.enq(JumpState{addr: addr, oldRegRename: oldRegRename, oldFreeList: oldFreeList});
     endmethod
 
     method Action setFile(File file) if(starting);
