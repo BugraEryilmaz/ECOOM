@@ -1,2 +1,3 @@
-`define LOG(x) $display x
-`define debug 1
+// `define LOG(x) $display x
+`define LOG(x) noAction
+`define debug 0

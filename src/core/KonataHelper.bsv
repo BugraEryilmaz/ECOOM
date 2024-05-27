@@ -78,9 +78,13 @@ function Action squashKonata(File f, KonataId konataCtr);
     endaction
 endfunction
 
-function Action commitKonata(File f, KonataId konataCtr, Reg#(KonataId) konataCmt);
+function Action commitKonata(File f, KonataId konataCtr, Reg#(KonataId) konataCmt, Reg#(KonataId) oldCommit);
     action
         konataCmt <= konataCmt + 1;
+        oldCommit <= konataCtr;
+        if (oldCommit - konataCtr > 1) begin
+            $fdisplay(f, "$$ %d %d", oldCommit, konataCtr);
+        end
 //        $display("[KONATA]E\t%d\t%d\t%s",konataCtr,0,"W");
         $fdisplay(f,"R\t%d\t%d\t%d", konataCtr, konataCmt,0);
     endaction

@@ -40,6 +40,7 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
     let lfh <- mkReg(InvalidFile);
 	Reg#(KonataId) fresh_id <- mkReg(0);
 	Reg#(KonataId) commit_id <- mkReg(0);
+	Reg#(KonataId) last_commit <- mkReg(0);
     
 	FIFO#(KonataId) retired <- mkFIFO;
 	FIFO#(KonataId) squashed <- mkFIFO;
@@ -152,7 +153,7 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
     rule administrative_konata_commit;
         retired.deq();
         let f = retired.first();
-        commitKonata(lfh, f, commit_id);
+        commitKonata(lfh, f, commit_id, last_commit);
     endrule
     
     rule administrative_konata_flush;

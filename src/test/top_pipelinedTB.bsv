@@ -29,7 +29,7 @@ module mktop_pipelinedTB(Empty);
     FIFO#(Mem) dreq <- mkFIFO;
     FIFO#(Mem) mmioreq <- mkFIFO;
     FIFO#(Bool) fifoMMIO <- mkFIFO;
-    let debug = True;
+    let debug = False;
     Reg#(Bit#(32)) cycle_count <- mkReg(0);
 
     rule tic;
