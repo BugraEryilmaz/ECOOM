@@ -40,7 +40,7 @@ module mkFetch(Fetch);
     FIFO#(FetchToDecode) outputFIFO <- mkBypassFIFO;
     FIFO#(CacheReq) reqFIFO <- mkBypassFIFO;
     FIFO#(Word) respFIFO <- mkBypassFIFO;
-    FIFO#(IMemBussiness) inflightFIFO <- mkFIFO;
+    FIFO#(IMemBussiness) inflightFIFO <- mkSizedFIFO(4);
 
     Ehr#(2, Bit#(32)) pcReg <- mkEhr(0);
     Ehr#(2, Bool) epochReg <- mkEhr(False);

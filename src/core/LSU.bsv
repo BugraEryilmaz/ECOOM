@@ -16,9 +16,9 @@ endinterface
 
 module mkLSU(LSU#(physicalRegSize, robTagSize, nInflight));
     // Communication FIFOs //
-    FIFO#(PEInput#(physicalRegSize, robTagSize)) inputFIFO <- mkBypassFIFO;
+    FIFO#(PEInput#(physicalRegSize, robTagSize)) inputFIFO <- mkBypassFIFO; // mkFIFO;
     FIFO#(PEResult#(physicalRegSize, robTagSize)) outputFIFO <- mkBypassFIFO;
-    FIFO#(Bool) sendStoreFIFO <- mkBypassFIFO;
+    FIFO#(Bool) sendStoreFIFO <- mkFIFO;
     
     Ehr#(2, Bit#(TLog#(TAdd#(nInflight, 1)))) inflightCounter <- mkEhr(0);
     Ehr#(2, Bit#(TLog#(TAdd#(nInflight, 1)))) poisonCounter <- mkEhr(0);

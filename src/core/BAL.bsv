@@ -6,7 +6,7 @@ import PEUtil::*;
 module mkBAL(PE#(physicalRegSize, robTagSize));
 
     // Communication FIFOs //
-    FIFO#(PEInput#(physicalRegSize, robTagSize)) inputFIFO <- mkBypassFIFO;
+    FIFO#(PEInput#(physicalRegSize, robTagSize)) inputFIFO <- mkBypassFIFO; // mkFIFO;
     FIFO#(PEResult#(physicalRegSize, robTagSize)) outputFIFO <- mkBypassFIFO;
     PulseWire flushing <- mkPulseWire;
 
