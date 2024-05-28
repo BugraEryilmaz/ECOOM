@@ -130,12 +130,21 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
             frontend.graduate(val.reservation.grad_rd);
 
             // Handle jumping
+            Bit#(32) target = val.reservation.pc + 4;
+            Bool taken = False;
             if(val.completion.jump_pc matches tagged Valid .jump_pc) begin
-                frontend.jumpAndRewind(
-                    jump_pc,
-                    nextRegMap,
-                    nextFreeList
-                );
+                taken = True;
+                target = jump_pc;
+            end
+
+            if(val.reservation.ppc != target) begin
+                frontend.jumpAndRewind( JumpState {
+                    pc: val.reservation.pc,
+                    target: target,
+                    taken: taken,
+                    oldRegRename: nextRegMap,
+                    oldFreeList: nextFreeList
+                });
                 backend.flush();
             end
         end

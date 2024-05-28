@@ -3,6 +3,7 @@ import FIFO::*;
 import FIFOF::*;
 import SpecialFIFOs::*;
 import Ehr::*;
+import BTB::*;
 import MemTypes::*;
 import KonataHelper::*;
 
@@ -21,7 +22,7 @@ typedef struct {
 } IMemBussiness deriving(Bits, FShow);
 
 interface Fetch;
-    method Action jumpTo(Bit#(32) addr);
+    method Action jumpTo(Bit#(32) pc, Bit#(32) target, Bool taken);
     method ActionValue#(FetchToDecode) getInst;
     method ActionValue#(CacheReq) sendReq();
     method Action getResp(Word resp);
@@ -32,6 +33,9 @@ interface Fetch;
 endinterface
 
 module mkFetch(Fetch);
+    // Internal Structures
+    BTB#(32) btb <- mkBTB;
+
     // Communication FIFOs //
     FIFO#(FetchToDecode) outputFIFO <- mkBypassFIFO;
     FIFO#(CacheReq) reqFIFO <- mkBypassFIFO;
@@ -55,7 +59,7 @@ module mkFetch(Fetch);
             data: ?
         });
         
-        let ppc = pcReg[0] + 4;
+        let ppc = btb.predict(pcReg[0]); // pcReg[0] + 4;
         inflightFIFO.enq(IMemBussiness{
             pc: pcReg[0],
             ppc: ppc,
@@ -87,11 +91,12 @@ module mkFetch(Fetch);
     endrule
 
     // METHODS //
-    method Action jumpTo(Bit#(32) addr);
-        pcReg[1] <= addr;
+    method Action jumpTo(Bit#(32) pc, Bit#(32) target, Bool taken);
+        pcReg[1] <= target;
         epochReg[1] <= !epochReg[1];
         outputFIFO.clear();
-        `LOG(("[IF] Jump to ", fshow(addr)));
+        btb.update(pc, taken ? tagged Valid target : tagged Invalid);
+        `LOG(("[IF] Jump to ", fshow(target)));
     endmethod
 
     method ActionValue#(FetchToDecode) getInst;

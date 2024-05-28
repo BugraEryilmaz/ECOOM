@@ -13,7 +13,9 @@ import ReservationStation::*;
 import KonataHelper::*;
 
 typedef struct {
-    Bit#(32) addr;
+    Bit#(32) pc;
+    Bit#(32) target;
+    Bool taken;
     Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) oldRegRename;
     Bit#(nPhysicalRegs) oldFreeList;
 } JumpState#(numeric type nPhysicalRegs) deriving(Bits, FShow);
@@ -33,7 +35,7 @@ interface Frontend#(numeric type nPhysicalRegs, numeric type nRobElements, numer
     method Action graduate (Maybe#(Bit#(TLog#(nPhysicalRegs))) old_src);
 
     // Jump and rewind
-    method Action jumpAndRewind(Bit#(32) addr, Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) oldRegRename, Bit#(nPhysicalRegs) oldFreeList);
+    method Action jumpAndRewind(JumpState#(nPhysicalRegs) jumpState);
 
     method Action setFile(File file);
     `ifdef debug
@@ -92,7 +94,7 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     rule rlFlush;
         let val = flushFifo.first;
         flushFifo.deq;
-        fetch.jumpTo(val.addr);
+        fetch.jumpTo(val.pc, val.target, val.taken);
         issue.flush(val.oldRegRename, val.oldFreeList);
         dispatch.flush();
         flushing.send();
@@ -143,8 +145,8 @@ module mkFrontend(Frontend#(nPhysicalRegs, nRobElements, nRSEntries))
     endmethod
 
     // Jump and rewind
-    method Action jumpAndRewind(Bit#(32) addr, Vector#(32, Maybe#(Bit#(TLog#(nPhysicalRegs)))) oldRegRename, Bit#(nPhysicalRegs) oldFreeList);
-        flushFifo.enq(JumpState{addr: addr, oldRegRename: oldRegRename, oldFreeList: oldFreeList});
+    method Action jumpAndRewind(JumpState#(nPhysicalRegs) jumpState);
+        flushFifo.enq(jumpState);
     endmethod
 
     method Action setFile(File file) if(starting);

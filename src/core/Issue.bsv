@@ -72,6 +72,7 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
                 arch_rd: dInst.valid_rd ? tagged Valid rd : tagged Invalid,
                 grad_rd: old_prd,
                 pc: f2d.pc,
+                ppc: f2d.ppc,
                 k_id: f2d.k_id
             };
 

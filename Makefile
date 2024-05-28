@@ -40,4 +40,4 @@ purge: clean
 	rm -rf $(SIM_DIR)
 
 
-all: clean $(BINARY_NAME)
+all: clean test
