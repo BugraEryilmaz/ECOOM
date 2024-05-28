@@ -8,3 +8,4 @@ info/
 *.ba
 **/.DS_Store
 *.log
+mem*.vmh

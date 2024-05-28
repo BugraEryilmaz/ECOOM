@@ -32,7 +32,12 @@ test:
 	bsc $(BSC_FLAGS) sim/$(BINARY_NAME) -sim -e mk$(BINARY_NAME)TB
 
 clean:
-	rm -rf info
-	rm -rf obj
+	rm -rf $(OBJ_DIR)
+	rm -rf $(INFO_DIR)
+
+purge: clean
+	rm -rf $(BUILD_DIR)
+	rm -rf $(SIM_DIR)
+
 
 all: clean $(BINARY_NAME)
