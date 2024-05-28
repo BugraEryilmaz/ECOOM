@@ -128,6 +128,7 @@ module mkIssue(Issue#(physicalRegCount, nRobElements))
 
     method Action setFile(File file) if(starting);
         lfh <= file;
+        rob.setFile(file);
         starting <= False;
     endmethod
 

@@ -54,6 +54,7 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
     rule rlEnqueue (!starting && !flushing);
         let entry = putFIFO.first;
         putFIFO.deq;
+        stageKonata(lfh, entry.k_id, "Ds");
 
         let ready_rs1 <- rdby.read(fromMaybe(?, entry.rs1));
         let ready_rs2 <- rdby.read(fromMaybe(?, entry.rs2));
@@ -135,6 +136,8 @@ module mkDispatch(Dispatch#(physicalRegSize, robTagSize, nRSEntries))
 
     method Action setFile(File file) if(starting);
         lfh <= file;
+        rsInteger.setFile(file);
+        rsLSU.setFile(file);
         starting <= False;
     endmethod
 

@@ -32,6 +32,7 @@ interface ROB#(numeric type nEntries, numeric type physicalRegSize);
     method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result);
     method ActionValue#(ROBResult#(physicalRegSize)) drain();
     method Action flush();
+    method Action setFile(File file);
     `ifdef debug
     method Action dumpState();
     `endif
@@ -43,6 +44,9 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     );
 
     // TODO Rewrite the reorder buffer :(
+
+    Reg#(File) lfh <- mkReg(InvalidFile);
+    Reg#(Bool) starting <- mkReg(True);
     
     // Data Structures
     Vector#(nEntries, Ehr#(4, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))) cb <- replicateM(mkEhr(Invalid));
@@ -58,7 +62,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
 
     // RULES //
 
-    rule rlReadCB;
+    rule rlReadCB (!starting);
         Vector#(nEntries, Maybe#(Maybe#(ROBEntry#(physicalRegSize))))  entriesSignal = ?;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
             entriesSignal[i] = cb[i][0];
@@ -66,7 +70,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
         readCb.wset(entriesSignal);
     endrule
 
-    rule rlDrain (isValid(readCb.wget));
+    rule rlDrain (isValid(readCb.wget) && !starting);
         if(fromMaybe(?, readCb.wget)[regHead[0]] matches tagged Valid .validEntry) begin
             let fromRS = rs.first;
             `LOG(("[ROB] Waiting on ", fshow(fromRS)));
@@ -76,6 +80,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
                     reservation: fromRS,
                     completion: fromCB
                 });
+                stageKonata(lfh, fromRS.k_id, "Dr");
                 cb[regHead[0]][0] <= tagged Invalid;
                 regHead[0] <= regHead[0] + 1;
             end
@@ -89,13 +94,14 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
                         k_id: ?
                     }
                 });
+                stageKonata(lfh, fromRS.k_id, "Dr");
                 cb[regHead[0]][0] <= tagged Invalid;
                 regHead[0] <= regHead[0] + 1;
             end
         end
     endrule
 
-    rule rlComplete (isValid(readCb.wget));
+    rule rlComplete (isValid(readCb.wget) && !starting);
         let result = inputFIFO.first;
         inputFIFO.deq;
 
@@ -106,7 +112,7 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
         }));
     endrule
 
-    rule rlReserve (isValid(readCb.wget));
+    rule rlReserve (isValid(readCb.wget) && !starting);
         if (fromMaybe(?, readCb.wget)[regTail[0]] matches tagged Invalid) begin
             tagFIFO.enq(regTail[0]);
             cb[regTail[0]][2] <= tagged Valid (tagged Invalid);
@@ -115,24 +121,24 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
     endrule
 
     // METHODS //
-    method ActionValue#(Bit#(TLog#(nEntries))) reserve(ROBReservation#(physicalRegSize) element);
+    method ActionValue#(Bit#(TLog#(nEntries))) reserve(ROBReservation#(physicalRegSize) element) if (!starting);
         let tag = tagFIFO.first;
         tagFIFO.deq;
         rs.enq(element);
         return tag;
     endmethod
 
-    method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result);
+    method Action complete(PEResult#(physicalRegSize, TLog#(nEntries)) result) if (!starting);
         inputFIFO.enq(result);
     endmethod
 
-    method ActionValue#(ROBResult#(physicalRegSize)) drain();
+    method ActionValue#(ROBResult#(physicalRegSize)) drain() if (!starting);
         let val = completion.first;
         completion.deq;
         return val;
     endmethod
     
-    method Action flush();
+    method Action flush() if (!starting);
         inputFIFO.clear();
         completion.clear();
         tagFIFO.clear();
@@ -142,6 +148,11 @@ module mkReorderBuffer(ROB#(nEntries, physicalRegSize))
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
             cb[i][3] <= tagged Invalid;
         end
+    endmethod
+
+    method Action setFile(File file);
+        starting <= False;
+        lfh <= file;
     endmethod
 
     `ifdef debug

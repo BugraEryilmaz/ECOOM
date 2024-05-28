@@ -1,3 +1,4 @@
+`include "Logging.bsv"
 import Vector::*;
 import FIFO::*;
 import SpecialFIFOs::*;
@@ -5,6 +6,7 @@ import Ehr::*;
 import RVUtil::*;
 import PEUtil::*;
 import ReservationStation::*;
+import KonataHelper::*;
 
 module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
     provisos(
@@ -20,10 +22,13 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
     Reg#(Bit#(entrySize)) regHead <- mkReg(0);
     Reg#(Bit#(entrySize)) regTail <- mkReg(0);
 
+    Reg#(File) lfh <- mkReg(InvalidFile);
+    Reg#(Bool) starting <- mkReg(True);
+
     // HELPERS //
 
     // RULES //
-    rule updateEntries (!flushing);
+    rule updateEntries (!flushing && !starting);
         Vector#(nEntries, Maybe#(element)) entriesSignal = ?;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
             entriesSignal[i] = entries[i][0];
@@ -31,7 +36,7 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
         entriesWire.wset(entriesSignal);
     endrule
 
-    rule wakeUpReg (!flushing && isValid(entriesWire.wget));
+    rule wakeUpReg (!flushing && isValid(entriesWire.wget) && !starting);
         let wake = readyQueue.first;
         readyQueue.deq;
         for(Integer i = 0; i < valueOf(nEntries); i = i + 1) begin
@@ -53,7 +58,7 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
         end
     endrule
 
-    rule putEntry (!flushing && isValid(entriesWire.wget));
+    rule putEntry (!flushing && isValid(entriesWire.wget) && !starting);
         Bit#(entrySize) idx = regHead;
         if(!isValid(fromMaybe(?, entriesWire.wget)[idx])) begin
             entries[idx][1] <= tagged Valid(putQueue.first);
@@ -62,17 +67,19 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
         end
     endrule
 
-    rule prepareIssue (!flushing && isValid(entriesWire.wget));
+    rule prepareIssue (!flushing && isValid(entriesWire.wget) && !starting);
         Bit#(entrySize) idx = regTail;
         let entry = fromMaybe(?, entriesWire.wget)[idx];
         if(entry matches tagged Valid .e &&& (e.ready_rs1 && e.ready_rs2)) begin
-            issueQueue.enq(fromMaybe(?, entry));
+            let issued = fromMaybe(?, entry);
+            issueQueue.enq(issued);
             entries[idx][2] <= tagged Invalid;
+            stageKonata(lfh, issued.k_id, "RS");
             regTail <= regTail + 1;
         end
     endrule
 
-    rule flushEntries (flushing);
+    rule flushEntries (flushing && !starting);
         putQueue.clear;
         readyQueue.clear;
         issueQueue.clear;
@@ -84,22 +91,27 @@ module mkReservationStationOrdered(RS#(nEntries, physicalRegSize, robTagSize))
     endrule
 
     // INTERFACE //
-    method Action put(RSEntry#(physicalRegSize, robTagSize) entry) if (!flushing);
+    method Action put(RSEntry#(physicalRegSize, robTagSize) entry) if (!flushing && !starting);
         putQueue.enq(entry);
     endmethod
 
-    method Action makeReady(WakeUpRegVal#(physicalRegSize) wake) if (!flushing);
+    method Action makeReady(WakeUpRegVal#(physicalRegSize) wake) if (!flushing && !starting);
         readyQueue.enq(wake);
     endmethod
 
-    method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue() if (!flushing);
+    method ActionValue#(RSEntry#(physicalRegSize, robTagSize)) issue() if (!flushing && !starting);
         let elem = issueQueue.first;
         issueQueue.deq;
         return elem;
     endmethod
 
-    method Action flush();
+    method Action flush() if (!starting);
         flushing.send();
+    endmethod
+
+    method Action setFile(File file);
+        lfh <= file;
+        starting <= False;
     endmethod
 
     `ifdef debug

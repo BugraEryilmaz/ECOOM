@@ -17,7 +17,7 @@ with open(output_path, 'w') as ofile:
                 fields = [field for field in fields if field != '']
                 start = int(fields[1]) + 1
                 end = int(fields[2])
-                print(f"Start: {start}, End: {end}")
+                # print(f"Start: {start}, End: {end}")
                 for i in range(start, end):
                     ofile.write(f"R\t{i}\t{i}\t1\n")
             else:

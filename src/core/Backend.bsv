@@ -49,19 +49,19 @@ module mkBackend(Backend#(physicalRegSize, robTagSize, nInflight))
     rule rlIALU (!starting && !flushing);
         let val <- ialu.get();
         cdb.ports[0].put(val);
-        stageKonata(lfh, val.k_id, "Rw");
+        stageKonata(lfh, val.k_id, "Ex");
     endrule
 
     rule rlBAL (!starting && !flushing);
         let val <- bal.get();
         cdb.ports[1].put(val);
-        stageKonata(lfh, val.k_id, "Rw");
+        stageKonata(lfh, val.k_id, "Ex");
     endrule
 
     rule rlLSU (!starting && !flushing);
         let val <- lsu.pe.get();
         cdb.ports[2].put(val);
-        stageKonata(lfh, val.k_id, "Rw");
+        stageKonata(lfh, val.k_id, "Ex");
     endrule
 
     // METHODS //
