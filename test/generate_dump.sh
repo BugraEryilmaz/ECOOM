@@ -11,4 +11,5 @@ riscv64-unknown-elf-objdump -D build/reverse32   > build/reverse32.dump
 riscv64-unknown-elf-objdump -D build/thelie32    > build/thelie32.dump
 riscv64-unknown-elf-objdump -D build/thuemorse32 > build/thuemorse32.dump
 riscv64-unknown-elf-objdump -D build/matmul32    > build/matmul32.dump
+riscv64-unknown-elf-objdump -D build/coremark32    > build/coremark32.dump
 

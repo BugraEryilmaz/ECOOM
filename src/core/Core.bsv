@@ -42,6 +42,7 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
 	Reg#(KonataId) commit_id <- mkReg(0);
 	Reg#(KonataId) last_commit <- mkReg(0);
     
+    
 	FIFO#(KonataId) retired <- mkFIFO;
 	FIFO#(KonataId) squashed <- mkFIFO;
     Reg#(Bool) starting <- mkReg(True);
@@ -49,20 +50,24 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
         if (starting) begin
             let f <- $fopen(dumpFile, "w") ;
             lfh <= f;
+        `ifdef KONATA_LOG
             $fwrite(f, "Kanata\t0004\nC=\t1\n");
+        `endif
             starting <= False;
             `LOG(("Starting\n"));
             frontend.setFile(f);
             backend.setFile(f);
         end
+        `ifdef KONATA_LOG
 		konataTic(lfh);
+        `endif
 	endrule
 
     // Communication FIFOs //
     FIFO#(ROBResult#(physicalRegSize)) commitQueue <- mkFIFO;
 
     // Debug //
-    `ifdef debug
+    // `ifdef debug
     Ehr#(2, Bit#(64)) cnt <- mkEhr(0);
 
     rule rlclk;
@@ -70,13 +75,13 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
     endrule
 
     rule deadlockChecker;
-        if(cnt[0] == 200) begin
+        if(cnt[0] == 10000) begin
             $display("Deadlock detected");
-            frontend.dumpState();
+            // frontend.dumpState();
             $finish;
         end
     endrule
-    `endif
+    // `endif
     
     // RULES //
     rule rlConnectALU (!starting);
@@ -153,9 +158,9 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
         stageKonata(lfh, val.reservation.k_id, "Cm");
         retired.enq(val.reservation.k_id);
 
-        `ifdef debug
+        // `ifdef debug
         cnt[1] <= 0;
-        `endif
+        // `endif
     endrule
 
     // Administration //

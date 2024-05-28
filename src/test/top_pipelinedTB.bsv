@@ -11,6 +11,7 @@ function Bool isMMIO(Bit#(32) addr);
         32'hf000fff0: True;
         32'hf000fff4: True;
         32'hf000fff8: True;
+        32'hf000fffc: True;
         default: False;
     endcase;
     return x;
@@ -30,7 +31,7 @@ module mktop_pipelinedTB(Empty);
     FIFO#(Mem) mmioreq <- mkFIFO;
     FIFO#(Bool) fifoMMIO <- mkFIFO;
     let debug = False;
-    Reg#(Bit#(32)) cycle_count <- mkReg(0);
+    Reg#(Bit#(38)) cycle_count <- mkReg(0);
 
     rule tic;
 	    cycle_count <= cycle_count + 1;
@@ -84,6 +85,9 @@ module mktop_pipelinedTB(Empty);
                 end
                 $fflush(stderr);
                 $finish;
+            end else if (req.addr == 'hf000_fffc) begin
+                // Read Time
+                req.data = cycle_count[37:6];
             end
     
             mmioreq.enq(req);
