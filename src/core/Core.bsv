@@ -191,7 +191,7 @@ module mkCore(Core#(nPhysicalRegs, nRobElements, nRSEntries, nInflightDmem))
 
 endmodule
 
-module mkCoreSized(Core#(64, 64, 32, 7));
-    Core#(64, 64, 32, 7) core <- mkCore;
+module mkCoreSized(Core#(64, 32, 32, 7));
+    Core#(64, 32, 32, 7) core <- mkCore;
     return core;
 endmodule
