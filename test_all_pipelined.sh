@@ -40,6 +40,10 @@ echo "Testing thuemorse"
 ./test.sh thuemorse32
 timeout 20 ./sim/top_pipelined
 
+echo "Testing sudoku"
+./test.sh sudoku4x4_32
+timeout 60 ./sim/top_pipelined
+
 echo "Testing matmul"
 ./test.sh matmul32
 timeout 300 ./sim/top_pipelined

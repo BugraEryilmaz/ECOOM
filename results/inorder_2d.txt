@@ -3,63 +3,63 @@ Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1065 to 
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 67 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
-RAN CYCLES         266
+RAN CYCLES         288
   PASS
 Testing and
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1065 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 67 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
-RAN CYCLES         266
+RAN CYCLES         288
   PASS
 Testing or
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1065 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 67 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
-RAN CYCLES         266
+RAN CYCLES         288
   PASS
 Testing sub
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1065 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 67 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
-RAN CYCLES         266
+RAN CYCLES         288
   PASS
 Testing xor
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1065 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 67 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
-RAN CYCLES         266
+RAN CYCLES         288
   PASS
 Testing hello
-Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1085 to 2047.
+Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1087 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 68 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
 Hello, world!
-RAN CYCLES         857
+RAN CYCLES         955
   PASS
 Testing mul
-Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1120 to 2047.
+Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1122 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
-Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 70 to 127.
+Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 71 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
-OkRAN CYCLES         838
+OkRAN CYCLES         967
   PASS
 Testing reverse
-Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1105 to 2047.
+Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1110 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 70 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
 ����������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������������
-RAN CYCLES       18490
+RAN CYCLES       22658
   PASS
 Testing thelie
-Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1440 to 2047.
+Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1442 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
-Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 90 to 127.
+Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 91 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
                    .MMM.
                      .OMM                       MM?
@@ -87,7 +87,7 @@ Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at
      MM                  .MMMMMMMMMM
       .MMM=..            .MMMMMM
           '77MMMMMMMMMMMMMM7
-RAN CYCLES       51977
+RAN CYCLES       61147
   PASS
 Testing thuemorse
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1126 to 2047.
@@ -95,76 +95,76 @@ Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 71 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
 01101001100101101001011001101001100101100110100101101001100101101001011001101001011010011001011001101001100101101001011001101001
-RAN CYCLES       25581
+RAN CYCLES       26115
   PASS
 Testing sudoku
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1559 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 2051 to 1073741823.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 98 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 129 to 67108863.
-0 0 3 4 
-3 4 0 0 
-0 3 4 1 
-4 0 2 3 
-Trying 1 at 0 0
-1 0 3 4 
-3 4 0 0 
-0 3 4 1 
-4 0 2 3 
-Trying 1 at 0 1
-1 1 3 4 
-3 4 0 0 
-0 3 4 1 
-4 0 2 3 
+0 0 � � 
+� � 0 0 
+0 � � � 
+� 0 � � 
+Trying � at 0 0
+� 0 � � 
+� � 0 0 
+0 � � � 
+� 0 � � 
+Trying � at 0 �
+� � � � 
+� � 0 0 
+0 � � � 
+� 0 � � 
 Invalid!
-Trying 2 at 0 1
-1 2 3 4 
-3 4 0 0 
-0 3 4 1 
-4 0 2 3 
-Trying 1 at 1 2
-1 2 3 4 
-3 4 1 0 
-0 3 4 1 
-4 0 2 3 
-Trying 1 at 1 3
-1 2 3 4 
-3 4 1 1 
-0 3 4 1 
-4 0 2 3 
+Trying � at 0 �
+� � � � 
+� � 0 0 
+0 � � � 
+� 0 � � 
+Trying � at � �
+� � � � 
+� � � 0 
+0 � � � 
+� 0 � � 
+Trying � at � �
+� � � � 
+� � � � 
+0 � � � 
+� 0 � � 
 Invalid!
-Trying 2 at 1 3
-1 2 3 4 
-3 4 1 2 
-0 3 4 1 
-4 0 2 3 
-Trying 1 at 2 0
-1 2 3 4 
-3 4 1 2 
-1 3 4 1 
-4 0 2 3 
+Trying � at � �
+� � � � 
+� � � � 
+0 � � � 
+� 0 � � 
+Trying � at � 0
+� � � � 
+� � � � 
+� � � � 
+� 0 � � 
 Invalid!
-Trying 2 at 2 0
-1 2 3 4 
-3 4 1 2 
-2 3 4 1 
-4 0 2 3 
-Trying 1 at 3 1
-1 2 3 4 
-3 4 1 2 
-2 3 4 1 
-4 1 2 3 
+Trying � at � 0
+� � � � 
+� � � � 
+� � � � 
+� 0 � � 
+Trying � at � �
+� � � � 
+� � � � 
+� � � � 
+� � � � 
 Sudoku solved!
-1 2 3 4 
-3 4 1 2 
-2 3 4 1 
-4 1 2 3 
-RAN CYCLES      127900
+    
+    
+    
+    
+RAN CYCLES      141206
   PASS
 Testing matmul
-Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1941 to 2047.
+Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 1685 to 2047.
 Warning: file 'mem.vmh' for memory 'bram_memory' has a gap at addresses 3075 to 1073741823.
-Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 122 to 127.
+Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 106 to 127.
 Warning: file 'memlines.vmh' for memory 'cache_mainMem_bram_memory' has a gap at addresses 193 to 67108863.
-RAN CYCLES     1804501
+RAN CYCLES     2178092
   PASS
