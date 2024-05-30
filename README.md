@@ -48,3 +48,7 @@ or up to 20% faster than in order. The core shows much better performance when t
 ![Cache with 1 cycle latency](docs/perf_1d.jpeg)
 
 ![Cache with 2 cycle latency](docs/perf_2d.jpeg)
+
+Following snapshot from konata shows the performance of the core along with the penalty of a branch instruction.
+
+![Konata snapshot](docs/konata.png)
