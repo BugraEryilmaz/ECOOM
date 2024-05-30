@@ -3,7 +3,7 @@ SIM_DIR=sim
 BUILD_DIR=build
 OBJ_DIR=obj
 INFO_DIR=info
-INCLUDE_DIR=src/cache:src/core:src/utils:test
+INCLUDE_DIR=src/fast_cache:src/core:src/utils:test
 BINARY_NAME=top_pipelined
 BSC_FLAGS=--aggressive-conditions +RTS -K32M -RTS --show-schedule -sched-dot -p +:$(INCLUDE_DIR) -vdir $(BUILD_DIR) -simdir $(BUILD_DIR)  -bdir $(OBJ_DIR) -info-dir $(INFO_DIR) -o 
 
@@ -22,6 +22,12 @@ verilog:
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(INFO_DIR)
 	bsc -remove-dollar $(BSC_FLAGS)  $(BINARY_NAME) -verilog -g mk$(BINARY_NAME)Sized -u ./src/core/$(BINARY_NAME).bsv
+
+cache:
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(OBJ_DIR)
+	mkdir -p $(INFO_DIR)
+	bsc -remove-dollar $(BSC_FLAGS)  $(BINARY_NAME) -verilog -g mkCacheInterface -u ./src/cache/CacheInterface.bsv
 
 test:
 	mkdir -p $(BUILD_DIR)
